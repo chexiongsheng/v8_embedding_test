@@ -2,6 +2,8 @@
 
 《c++游戏服务器嵌入v8 js引擎胎教级教程》配套代码
 
+# !!! 注意：本示例库较老旧，正式生产使用，应到puerts官网取最新库代码： https://github.com/Tencent/puerts
+
 测试环境：Ubuntu
 
 ## v8下载

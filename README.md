@@ -36,6 +36,14 @@ make
 ./helloworld
 ~~~
 
+
+## nodeaddon项目运行
+
+~~~bash
+npm install .
+node hello.js
+~~~
+
 ## nodejstest项目运行
 
 先编译libnode.so

@@ -1,3 +1,13 @@
 var addon = require('bindings')('hello');
 
-console.log(addon.hello()); // 'world'
+const TestClass = addon.loadCppType('TestClass');
+TestClass.Print('hello world');
+let obj = new TestClass(123);
+
+console.log('???');
+
+TestClass.Print(obj.X);
+obj.X = 99;
+TestClass.Print(obj.X);
+
+TestClass.Print('ret = ' + obj.Add(1, 3));

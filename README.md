@@ -40,6 +40,7 @@ make
 ## nodeaddon项目运行
 
 ~~~bash
+cd nodeaddon
 npm install .
 node hello.js
 ~~~

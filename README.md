@@ -67,3 +67,42 @@ make
 
 ./embedtest
 ~~~
+
+## pesapitest
+
+由于动态库加载仅实现了window版本（见([PesapiAddonLoad.cpp]pesapitest/pesapiv8impl/src/PesapiAddonLoad.cpp)），所以只能在window下运行
+
+编译
+~~~bash
+cd pesapitest\pesv8app
+make_win64.bat
+~~~
+
+~~~bash
+cd pesapitest\pesaddon
+make_win64.bat
+~~~
+
+运行
+~~~bash
+cd pesapitest\pesv8app
+build64_v8\Release\helloworld.exe
+~~~
+
+输出
+~~~bash
+wrap by hand begin
+Inc1024
+wrap by hand end
+Inc2048
+~~~
+
+### 说明
+
+* pesapitest\pesaddon是一个pesapi的扩展（动态库），理论上可以在任意实现了pesapi的环境运行，可以仅依赖于纯c的头文件pesapi.h以根据该头文件生成的pesapi_adpt.c文件。如果需要用c++模板绑定，则依赖puerts相关头文件。
+
+* pesv8app是个可执行程序，其嵌入了v8，并基于v8实现了pesapi（见[PesapiV8Impl.cpp]pesapitest/pesapiv8impl/src/PesapiV8Impl.cpp)）
+
+* pesv8app通过pesapi_load_addon加载了dll，然后就可以通过loadCppType加载注册的类
+
+

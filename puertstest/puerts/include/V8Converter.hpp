@@ -23,30 +23,30 @@
     };                                                \
     }
 
-#define __DefCDataPointerConverter(CLS)                                                             \
-    namespace puerts                                                                                \
-    {                                                                                               \
-    namespace converter                                                                             \
-    {                                                                                               \
-    template <>                                                                                     \
-    struct Converter<CLS*>                                                                          \
-    {                                                                                               \
-        static v8::Local<v8::Value> toScript(v8::Local<v8::Context> context, CLS* value)            \
-        {                                                                                           \
-            return ::puerts::DataTransfer::FindOrAddCData(                                          \
-                context->GetIsolate(), context, puerts::ScriptTypeName<CLS>::value, value, true);   \
-        }                                                                                           \
-        static CLS* toCpp(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)        \
-        {                                                                                           \
-            return ::puerts::DataTransfer::GetPointerFast<CLS>(value.As<v8::Object>());             \
-        }                                                                                           \
-        static bool accept(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)       \
-        {                                                                                           \
-            return ::puerts::DataTransfer::IsInstanceOf(                                            \
-                context->GetIsolate(), puerts::ScriptTypeName<CLS>::value, value.As<v8::Object>()); \
-        }                                                                                           \
-    };                                                                                              \
-    }                                                                                               \
+#define __DefCDataPointerConverter(CLS)                                                           \
+    namespace puerts                                                                              \
+    {                                                                                             \
+    namespace converter                                                                           \
+    {                                                                                             \
+    template <>                                                                                   \
+    struct Converter<CLS*>                                                                        \
+    {                                                                                             \
+        static v8::Local<v8::Value> toScript(v8::Local<v8::Context> context, CLS* value)          \
+        {                                                                                         \
+            return ::puerts::DataTransfer::FindOrAddCData(                                        \
+                context->GetIsolate(), context, puerts::StaticTypeId<CLS>::get(), value, true);   \
+        }                                                                                         \
+        static CLS* toCpp(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)      \
+        {                                                                                         \
+            return ::puerts::DataTransfer::GetPointerFast<CLS>(value.As<v8::Object>());           \
+        }                                                                                         \
+        static bool accept(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)     \
+        {                                                                                         \
+            return ::puerts::DataTransfer::IsInstanceOf(                                          \
+                context->GetIsolate(), puerts::StaticTypeId<CLS>::get(), value.As<v8::Object>()); \
+        }                                                                                         \
+    };                                                                                            \
+    }                                                                                             \
     }
 
 namespace puerts
@@ -110,6 +110,11 @@ template <typename T>
 V8_INLINE T* FastGetNativeObjectPointer(v8::Local<v8::Context> context, v8::Local<v8::Object> Object)
 {
     return DataTransfer::GetPointerFast<T>(Object);
+}
+
+V8_INLINE v8::Local<v8::Value> GetUndefined(v8::Local<v8::Context> context)
+{
+    return v8::Undefined(context->GetIsolate());
 }
 
 }    // namespace puerts
@@ -293,7 +298,7 @@ struct Converter<bool>
 };
 
 template <typename T>
-struct Converter<std::reference_wrapper<T>>
+struct Converter<std::reference_wrapper<T>, typename std::enable_if<!is_objecttype<T>::value && !is_uetype<T>::value>::type>
 {
     static v8::Local<v8::Value> toScript(v8::Local<v8::Context> context, const T& value)
     {
@@ -322,13 +327,45 @@ struct Converter<std::reference_wrapper<T>>
     }
 };
 
+template <typename T>
+struct Converter<std::reference_wrapper<T>, typename std::enable_if<is_objecttype<T>::value || is_uetype<T>::value>::type>
+{
+    static v8::Local<v8::Value> toScript(v8::Local<v8::Context> context, const T& value)
+    {
+        auto result = v8::Object::New(context->GetIsolate());
+        auto _unused = result->Set(context, 0, Converter<T>::toScript(context, value));
+        return result;
+    }
+
+    static std::reference_wrapper<T> toCpp(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)
+    {
+        static T _result;
+        if (!value.IsEmpty() && value->IsObject())
+        {
+            auto outer = value->ToObject(context).ToLocalChecked();
+            auto realvalue = outer->Get(context, 0).ToLocalChecked();
+            auto Ptr = Converter<typename std::decay<T>::type*>::toCpp(context, realvalue);
+            return Ptr ? *Ptr : _result;
+        }
+        else
+        {
+            return _result;
+        }
+    }
+
+    static bool accept(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)
+    {
+        return value->IsObject();    // do not checked inner
+    }
+};
+
 template <class T>
 struct Converter<T, typename std::enable_if<std::is_copy_constructible<T>::value && std::is_constructible<T>::value &&
                                             is_objecttype<T>::value && !is_uetype<T>::value>::type>
 {
     static v8::Local<v8::Value> toScript(v8::Local<v8::Context> context, T value)
     {
-        return DataTransfer::FindOrAddCData(context->GetIsolate(), context, ScriptTypeName<T>::value, new T(value), false);
+        return DataTransfer::FindOrAddCData(context->GetIsolate(), context, StaticTypeId<T>::get(), new T(value), false);
     }
     static T toCpp(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)
     {
@@ -337,7 +374,7 @@ struct Converter<T, typename std::enable_if<std::is_copy_constructible<T>::value
     }
     static bool accept(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)
     {
-        return DataTransfer::IsInstanceOf(context->GetIsolate(), ScriptTypeName<T>::value, value.As<v8::Object>());
+        return DataTransfer::IsInstanceOf(context->GetIsolate(), StaticTypeId<T>::get(), value.As<v8::Object>());
     }
 };
 

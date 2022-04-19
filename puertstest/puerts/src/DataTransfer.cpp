@@ -15,15 +15,15 @@
 namespace puerts
 {
 v8::Local<v8::Value> DataTransfer::FindOrAddCData(
-    v8::Isolate* Isolate, v8::Local<v8::Context> Context, const char* CDataName, const void* Ptr, bool PassByPointer)
+    v8::Isolate* Isolate, v8::Local<v8::Context> Context, const void* TypeId, const void* Ptr, bool PassByPointer)
 {
     return IsolateData<ICppObjectMapper>(Isolate)->FindOrAddCppObject(
-        Isolate, Context, CDataName, const_cast<void*>(Ptr), PassByPointer);
+        Isolate, Context, TypeId, const_cast<void*>(Ptr), PassByPointer);
 }
 
-bool DataTransfer::IsInstanceOf(v8::Isolate* Isolate, const char* CDataName, v8::Local<v8::Object> JsObject)
+bool DataTransfer::IsInstanceOf(v8::Isolate* Isolate, const void* TypeId, v8::Local<v8::Object> JsObject)
 {
-    return IsolateData<ICppObjectMapper>(Isolate)->IsInstanceOfCppObject(CDataName, JsObject);
+    return IsolateData<ICppObjectMapper>(Isolate)->IsInstanceOfCppObject(TypeId, JsObject);
 }
 
 v8::Local<v8::Value> DataTransfer::UnRef(v8::Isolate* Isolate, const v8::Local<v8::Value>& Value)
@@ -63,7 +63,7 @@ v8::Local<v8::Value> DataTransfer::FindOrAddObject(
 v8::Local<v8::Value> DataTransfer::FindOrAddStruct(
     v8::Isolate* Isolate, v8::Local<v8::Context> Context, UScriptStruct* ScriptStruct, void* Ptr, bool PassByPointer)
 {
-    return FV8Utils::IsolateData<IObjectMapper>(Isolate)->FindOrAddStruct(Isolate, Context, ScriptStruct, Ptr, PassByPointer);
+    return FV8Utils::IsolateData<IObjectMapper>(Isolate)->FindOrAddStruct(Isolate, Context, ScriptStruct, Ptr, PassByPointer, true);
 }
 
 bool DataTransfer::IsInstanceOf(v8::Isolate* Isolate, UStruct* Struct, v8::Local<v8::Object> JsObject)

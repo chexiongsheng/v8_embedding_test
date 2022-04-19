@@ -322,16 +322,16 @@ void pesapi_set_property (pesapi_env env, pesapi_value object, const char* key, 
     pesapi_set_property_ptr(env, object, key, value);
 }
 
-typedef pesapi_value (*pesapi_call_functionType)(pesapi_env env, pesapi_value func, pesapi_value this_object, int argc,const pesapi_value argv[]);
+typedef pesapi_value (*pesapi_call_functionType)(pesapi_env env, pesapi_value func, pesapi_value this_object, int argc, const pesapi_value argv[]);
 static pesapi_call_functionType pesapi_call_function_ptr;
-pesapi_value pesapi_call_function (pesapi_env env, pesapi_value func, pesapi_value this_object, int argc,const pesapi_value argv[]) {
+pesapi_value pesapi_call_function (pesapi_env env, pesapi_value func, pesapi_value this_object, int argc, const pesapi_value argv[]) {
     return pesapi_call_function_ptr(env, func, this_object, argc, argv);
 }
 
-typedef void (*pesapi_define_classType)(const char* type_name, const char* super_type_name,pesapi_constructor constructor, pesapi_finalize finalize, size_t property_count,const pesapi_property_descriptor* properties);
+typedef void (*pesapi_define_classType)(const void* type_id, const void* super_type_id, const char* type_name,pesapi_constructor constructor, pesapi_finalize finalize, size_t property_count, const pesapi_property_descriptor* properties);
 static pesapi_define_classType pesapi_define_class_ptr;
-void pesapi_define_class (const char* type_name, const char* super_type_name,pesapi_constructor constructor, pesapi_finalize finalize, size_t property_count,const pesapi_property_descriptor* properties) {
-    pesapi_define_class_ptr(type_name, super_type_name, constructor, finalize, property_count, properties);
+void pesapi_define_class (const void* type_id, const void* super_type_id, const char* type_name,pesapi_constructor constructor, pesapi_finalize finalize, size_t property_count, const pesapi_property_descriptor* properties) {
+    pesapi_define_class_ptr(type_id, super_type_id, type_name, constructor, finalize, property_count, properties);
 }
 
 

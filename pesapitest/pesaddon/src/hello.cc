@@ -25,7 +25,7 @@ void Init1() {
     {
         { "Inc", true, Inc},
     };
-    pesapi_define_class("TestClass11", nullptr, nullptr, nullptr, 1, properties);
+    pesapi_define_class("TestClass11", nullptr, "TestClass11", nullptr, nullptr, 1, properties);
 }
 
 //cpp template

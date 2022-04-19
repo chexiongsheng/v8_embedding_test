@@ -19,10 +19,18 @@
 #define STRINGIFY_(x) #x
 #define STRINGIFY(x) STRINGIFY_(x)
 
+#ifndef MSVC_PRAGMA
+#if !defined(__clang__) && defined(_MSC_VER)
+	#define MSVC_PRAGMA(Pragma) __pragma(Pragma)
+#else
+	#define MSVC_PRAGMA(...)
+#endif
+#endif
+
 static std::map<std::string, void*> GHandlers;
 
-__pragma(warning(push))
-__pragma(warning(disable : 4191))
+MSVC_PRAGMA(warning(push))
+MSVC_PRAGMA(warning(disable : 4191))
 static pesapi_func_ptr funcs[] = {(pesapi_func_ptr) &pesapi_create_null, (pesapi_func_ptr) &pesapi_create_undefined,
     (pesapi_func_ptr) &pesapi_create_boolean, (pesapi_func_ptr) &pesapi_create_int32, (pesapi_func_ptr) &pesapi_create_uint32,
     (pesapi_func_ptr) &pesapi_create_int64, (pesapi_func_ptr) &pesapi_create_uint64, (pesapi_func_ptr) &pesapi_create_double,
@@ -45,7 +53,7 @@ static pesapi_func_ptr funcs[] = {(pesapi_func_ptr) &pesapi_create_null, (pesapi
     (pesapi_func_ptr) &pesapi_release_value_holder, (pesapi_func_ptr) &pesapi_get_value_from_holder,
     (pesapi_func_ptr) &pesapi_get_property, (pesapi_func_ptr) &pesapi_set_property, (pesapi_func_ptr) &pesapi_call_function,
     (pesapi_func_ptr) &pesapi_define_class};
-__pragma(warning(pop))
+MSVC_PRAGMA(warning(pop))
 
 static int LoadAddon(const char* path, const char* module_name)
 {

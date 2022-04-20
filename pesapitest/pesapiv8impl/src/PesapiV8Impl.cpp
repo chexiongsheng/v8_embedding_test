@@ -396,11 +396,12 @@ void pesapi_release_env_holder(pesapi_env_holder env_holder)
     }
 }
 
-pesapi_scope pesapi_open_scope(pesapi_env_holder env_holder)
+pesapi_scope pesapi_open_scope(pesapi_env env)
 {
-    env_holder->isolate->Enter();
-    auto scope = new pesapi_scope__(env_holder->isolate);
-    env_holder->context_persistent.Get(env_holder->isolate)->Enter();
+    auto context = v8impl::V8LocalContextFromPesapiEnv(env);
+    context->GetIsolate()->Enter();
+    auto scope = new pesapi_scope__(context->GetIsolate());
+    context->Enter();
     return scope;
 }
 
@@ -523,6 +524,8 @@ pesapi_value pesapi_call_function(pesapi_env env, pesapi_value pfunc, pesapi_val
     }
 }
 
+MSVC_PRAGMA(warning(push))
+MSVC_PRAGMA(warning(disable : 4191))
 void pesapi_define_class(const void* type_id, const void* super_type_id, const char* type_name, pesapi_constructor constructor,
     pesapi_finalize finalize, size_t property_count, const pesapi_property_descriptor* properties)
 {
@@ -567,6 +570,7 @@ void pesapi_define_class(const void* type_id, const void* super_type_id, const c
 
     puerts::RegisterJSClass(classDef);
 }
+MSVC_PRAGMA(warning(pop))
 
 EXTERN_C_END
 

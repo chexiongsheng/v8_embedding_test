@@ -268,10 +268,10 @@ void pesapi_release_env_holder (pesapi_env_holder env_holder) {
     pesapi_release_env_holder_ptr(env_holder);
 }
 
-typedef pesapi_scope (*pesapi_open_scopeType)(pesapi_env_holder env_holder);
+typedef pesapi_scope (*pesapi_open_scopeType)(pesapi_env env);
 static pesapi_open_scopeType pesapi_open_scope_ptr;
-pesapi_scope pesapi_open_scope (pesapi_env_holder env_holder) {
-    return pesapi_open_scope_ptr(env_holder);
+pesapi_scope pesapi_open_scope (pesapi_env env) {
+    return pesapi_open_scope_ptr(env);
 }
 
 typedef bool (*pesapi_has_caughtType)(pesapi_scope scope);

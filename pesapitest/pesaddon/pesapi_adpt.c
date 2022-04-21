@@ -238,10 +238,10 @@ void pesapi_add_return (pesapi_callback_info info, pesapi_value value) {
     pesapi_add_return_ptr(info, value);
 }
 
-typedef void (*pesapi_throw_by_stringType)(pesapi_env env, const char* msg);
+typedef void (*pesapi_throw_by_stringType)(pesapi_callback_info pinfo, const char* msg);
 static pesapi_throw_by_stringType pesapi_throw_by_string_ptr;
-void pesapi_throw_by_string (pesapi_env env, const char* msg) {
-    pesapi_throw_by_string_ptr(env, msg);
+void pesapi_throw_by_string (pesapi_callback_info pinfo, const char* msg) {
+    pesapi_throw_by_string_ptr(pinfo, msg);
 }
 
 typedef pesapi_env_holder (*pesapi_hold_envType)(pesapi_env env);

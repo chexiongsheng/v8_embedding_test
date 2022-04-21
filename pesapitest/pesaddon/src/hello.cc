@@ -5,10 +5,26 @@
 //cpp lib
 class TestClass22 {
 public:
+    TestClass22(){
+        std::cout << "TestClass22 " << this << std::endl;
+        c = 0;
+    }
+    
     static int32_t Inc(int32_t p) {
-        std::cout << "Inc" << p << std::endl;
+        std::cout << "Inc " << p << std::endl;
         return p + 1;
     }
+    
+    int32_t Cpp() {
+        std::cout << "Cpp " << c << std::endl;
+        return c++;
+    }
+    
+    ~TestClass22(){
+        std::cout << "~TestClass22 " << this << std::endl;
+    }
+    
+    int c;
 };
 
 //only depend on pesapi.h 
@@ -33,7 +49,9 @@ UsingCppType(TestClass22);
 
 void Init2() {
     puerts::DefineClass<TestClass22>()
+        .Constructor()
         .Function("Inc", MakeFunction(&TestClass22::Inc))
+        .Method("Cpp", MakeFunction(&TestClass22::Cpp))
         .Register();
 }
 

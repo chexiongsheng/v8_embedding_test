@@ -6,22 +6,28 @@
  * which is part of this source code package.
  */
 
-#ifndef WITH_QUICKJS
-
 #include "pesapi.h"
-#include "CoreMinimal.h"
+#if defined(PLATFORM_WINDOWS)
+#include <windows.h>
+#endif
 
 #include <map>
 #include <string>
+#include <iostream>
+#include <regex>
 
 #define STRINGIFY_(x) #x
 #define STRINGIFY(x) STRINGIFY_(x)
 
-static std::map<std::string, void*> GHandlers;
-
-#if PLATFORM_IOS
-int PesapiLoadFramework(std::string frameworkName, std::string entryClassName, pesapi_func_ptr* funcPtrArray);
+#ifndef MSVC_PRAGMA
+#if !defined(__clang__) && defined(_MSC_VER)
+	#define MSVC_PRAGMA(Pragma) __pragma(Pragma)
+#else
+	#define MSVC_PRAGMA(...)
 #endif
+#endif
+
+static std::map<std::string, void*> GHandlers;
 
 MSVC_PRAGMA(warning(push))
 MSVC_PRAGMA(warning(disable : 4191))
@@ -45,7 +51,8 @@ static pesapi_func_ptr funcs[] = {(pesapi_func_ptr) &pesapi_create_null, (pesapi
     (pesapi_func_ptr) &pesapi_open_scope, (pesapi_func_ptr) &pesapi_has_caught, (pesapi_func_ptr) &pesapi_close_scope,
     (pesapi_func_ptr) &pesapi_hold_value, (pesapi_func_ptr) &pesapi_duplicate_value_holder,
     (pesapi_func_ptr) &pesapi_release_value_holder, (pesapi_func_ptr) &pesapi_get_value_from_holder,
-    (pesapi_func_ptr) &pesapi_get_property, (pesapi_func_ptr) &pesapi_set_property, (pesapi_func_ptr) &pesapi_call_function,
+    (pesapi_func_ptr) &pesapi_get_property, (pesapi_func_ptr) &pesapi_set_property, (pesapi_func_ptr) &pesapi_get_property_uint32,
+    (pesapi_func_ptr) &pesapi_set_property_uint32, (pesapi_func_ptr) &pesapi_call_function,
     (pesapi_func_ptr) &pesapi_alloc_type_infos, (pesapi_func_ptr) &pesapi_set_type_info,
     (pesapi_func_ptr) &pesapi_create_signature_info, (pesapi_func_ptr) &pesapi_alloc_property_descriptors,
     (pesapi_func_ptr) &pesapi_set_method_info, (pesapi_func_ptr) &pesapi_set_property_info, (pesapi_func_ptr) &pesapi_define_class};
@@ -58,32 +65,33 @@ static int LoadAddon(const char* path, const char* module_name)
         // UE_LOG(LogTemp, Warning, TEXT("Try load addon already loaded: %s"), UTF8_TO_TCHAR(path));
         return 0;
     }
-#if !PLATFORM_IOS
-    void* Handle = FPlatformProcess::GetDllHandle(UTF8_TO_TCHAR(path));
-    if (Handle)
-    {
-        FString EntryName = UTF8_TO_TCHAR(STRINGIFY(PESAPI_MODULE_INITIALIZER(___magic_module_name_xx___)));
-        EntryName = EntryName.Replace(TEXT("___magic_module_name_xx___"), UTF8_TO_TCHAR(module_name));
+    
+    HINSTANCE hinstLib; 
 
-        auto Init = (void (*)(pesapi_func_ptr*))(uintptr_t) FPlatformProcess::GetDllExport(Handle, *EntryName);
-        if (Init)
+    hinstLib = LoadLibrary(path); 
+
+    if (hinstLib != NULL) 
+    {
+        std::string EntryName = STRINGIFY(PESAPI_MODULE_INITIALIZER(___magic_module_name_xx___));
+        EntryName = std::regex_replace(EntryName, std::regex("___magic_module_name_xx___"), module_name);
+        
+        auto Init = (void (*)(pesapi_func_ptr*))(uintptr_t)GetProcAddress(hinstLib, EntryName.c_str()); 
+ 
+        if (Init) 
         {
             Init(funcs);
-            GHandlers[path] = Handle;
+            GHandlers[path] = hinstLib;
             return 0;
         }
-        UE_LOG(LogTemp, Error, TEXT("Could not find entry for: %s"), UTF8_TO_TCHAR(path));
-    }
+        std::cout << "can find symbol " << EntryName << " in " << path << "!" << std::endl;
+        FreeLibrary(hinstLib); 
+    } 
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("Could not load addon: %s"), UTF8_TO_TCHAR(path));
+        std::cout << "load " << path << " fail!" << std::endl;
     }
+    
     return -1;
-#else
-    FString EntryName = UTF8_TO_TCHAR(STRINGIFY(PESAPI_MODULE_INITIALIZER(___magic_module_name_xx___)));
-    EntryName = EntryName.Replace(TEXT("___magic_module_name_xx___"), UTF8_TO_TCHAR(module_name));
-    return PesapiLoadFramework(module_name, TCHAR_TO_UTF8(*EntryName), funcs);
-#endif
 }
 
 EXTERN_C_START
@@ -93,4 +101,3 @@ int pesapi_load_addon(const char* path, const char* module_name)
 }
 EXTERN_C_END
 
-#endif

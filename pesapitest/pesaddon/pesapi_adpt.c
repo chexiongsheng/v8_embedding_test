@@ -322,6 +322,18 @@ void pesapi_set_property (pesapi_env env, pesapi_value object, const char* key, 
     pesapi_set_property_ptr(env, object, key, value);
 }
 
+typedef pesapi_value (*pesapi_get_property_uint32Type)(pesapi_env env, pesapi_value object, uint32_t key);
+static pesapi_get_property_uint32Type pesapi_get_property_uint32_ptr;
+pesapi_value pesapi_get_property_uint32 (pesapi_env env, pesapi_value object, uint32_t key) {
+    return pesapi_get_property_uint32_ptr(env, object, key);
+}
+
+typedef void (*pesapi_set_property_uint32Type)(pesapi_env env, pesapi_value object, uint32_t key, pesapi_value value);
+static pesapi_set_property_uint32Type pesapi_set_property_uint32_ptr;
+void pesapi_set_property_uint32 (pesapi_env env, pesapi_value object, uint32_t key, pesapi_value value) {
+    pesapi_set_property_uint32_ptr(env, object, key, value);
+}
+
 typedef pesapi_value (*pesapi_call_functionType)(pesapi_env env, pesapi_value func, pesapi_value this_object, int argc, const pesapi_value argv[]);
 static pesapi_call_functionType pesapi_call_function_ptr;
 pesapi_value pesapi_call_function (pesapi_env env, pesapi_value func, pesapi_value this_object, int argc, const pesapi_value argv[]) {
@@ -424,14 +436,16 @@ void pesapi_init(pesapi_func_ptr* func_array){    pesapi_create_null_ptr = (pesa
     pesapi_get_value_from_holder_ptr = (pesapi_get_value_from_holderType)func_array[50];
     pesapi_get_property_ptr = (pesapi_get_propertyType)func_array[51];
     pesapi_set_property_ptr = (pesapi_set_propertyType)func_array[52];
-    pesapi_call_function_ptr = (pesapi_call_functionType)func_array[53];
-    pesapi_alloc_type_infos_ptr = (pesapi_alloc_type_infosType)func_array[54];
-    pesapi_set_type_info_ptr = (pesapi_set_type_infoType)func_array[55];
-    pesapi_create_signature_info_ptr = (pesapi_create_signature_infoType)func_array[56];
-    pesapi_alloc_property_descriptors_ptr = (pesapi_alloc_property_descriptorsType)func_array[57];
-    pesapi_set_method_info_ptr = (pesapi_set_method_infoType)func_array[58];
-    pesapi_set_property_info_ptr = (pesapi_set_property_infoType)func_array[59];
-    pesapi_define_class_ptr = (pesapi_define_classType)func_array[60];
+    pesapi_get_property_uint32_ptr = (pesapi_get_property_uint32Type)func_array[53];
+    pesapi_set_property_uint32_ptr = (pesapi_set_property_uint32Type)func_array[54];
+    pesapi_call_function_ptr = (pesapi_call_functionType)func_array[55];
+    pesapi_alloc_type_infos_ptr = (pesapi_alloc_type_infosType)func_array[56];
+    pesapi_set_type_info_ptr = (pesapi_set_type_infoType)func_array[57];
+    pesapi_create_signature_info_ptr = (pesapi_create_signature_infoType)func_array[58];
+    pesapi_alloc_property_descriptors_ptr = (pesapi_alloc_property_descriptorsType)func_array[59];
+    pesapi_set_method_info_ptr = (pesapi_set_method_infoType)func_array[60];
+    pesapi_set_property_info_ptr = (pesapi_set_property_infoType)func_array[61];
+    pesapi_define_class_ptr = (pesapi_define_classType)func_array[62];
 }
 
 EXTERN_C_END

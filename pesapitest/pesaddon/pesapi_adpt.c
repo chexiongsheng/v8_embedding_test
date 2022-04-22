@@ -328,9 +328,45 @@ pesapi_value pesapi_call_function (pesapi_env env, pesapi_value func, pesapi_val
     return pesapi_call_function_ptr(env, func, this_object, argc, argv);
 }
 
-typedef void (*pesapi_define_classType)(const void* type_id, const void* super_type_id, const char* type_name,pesapi_constructor constructor, pesapi_finalize finalize, size_t property_count, const pesapi_property_descriptor* properties);
+typedef pesapi_type_info (*pesapi_alloc_type_infosType)(size_t count);
+static pesapi_alloc_type_infosType pesapi_alloc_type_infos_ptr;
+pesapi_type_info pesapi_alloc_type_infos (size_t count) {
+    return pesapi_alloc_type_infos_ptr(count);
+}
+
+typedef void (*pesapi_set_type_infoType)(pesapi_type_info type_infos, size_t index, const char* name, bool is_pointer, bool is_const, bool is_ref, bool is_primitive);
+static pesapi_set_type_infoType pesapi_set_type_info_ptr;
+void pesapi_set_type_info (pesapi_type_info type_infos, size_t index, const char* name, bool is_pointer, bool is_const, bool is_ref, bool is_primitive) {
+    pesapi_set_type_info_ptr(type_infos, index, name, is_pointer, is_const, is_ref, is_primitive);
+}
+
+typedef pesapi_signature_info (*pesapi_create_signature_infoType)(pesapi_type_info return_type, size_t parameter_count, pesapi_type_info parameter_types);
+static pesapi_create_signature_infoType pesapi_create_signature_info_ptr;
+pesapi_signature_info pesapi_create_signature_info (pesapi_type_info return_type, size_t parameter_count, pesapi_type_info parameter_types) {
+    return pesapi_create_signature_info_ptr(return_type, parameter_count, parameter_types);
+}
+
+typedef pesapi_property_descriptor (*pesapi_alloc_property_descriptorsType)(size_t count);
+static pesapi_alloc_property_descriptorsType pesapi_alloc_property_descriptors_ptr;
+pesapi_property_descriptor pesapi_alloc_property_descriptors (size_t count) {
+    return pesapi_alloc_property_descriptors_ptr(count);
+}
+
+typedef void (*pesapi_set_method_infoType)(pesapi_property_descriptor properties, size_t index, const char* name, bool is_static,pesapi_callback method, void* data, pesapi_signature_info signature_info);
+static pesapi_set_method_infoType pesapi_set_method_info_ptr;
+void pesapi_set_method_info (pesapi_property_descriptor properties, size_t index, const char* name, bool is_static,pesapi_callback method, void* data, pesapi_signature_info signature_info) {
+    pesapi_set_method_info_ptr(properties, index, name, is_static, method, data, signature_info);
+}
+
+typedef void (*pesapi_set_property_infoType)(pesapi_property_descriptor properties, size_t index, const char* name, bool is_static,pesapi_callback getter, pesapi_callback setter, void* data, pesapi_type_info type_info);
+static pesapi_set_property_infoType pesapi_set_property_info_ptr;
+void pesapi_set_property_info (pesapi_property_descriptor properties, size_t index, const char* name, bool is_static,pesapi_callback getter, pesapi_callback setter, void* data, pesapi_type_info type_info) {
+    pesapi_set_property_info_ptr(properties, index, name, is_static, getter, setter, data, type_info);
+}
+
+typedef void (*pesapi_define_classType)(const void* type_id, const void* super_type_id, const char* type_name,pesapi_constructor constructor, pesapi_finalize finalize, size_t property_count, pesapi_property_descriptor properties);
 static pesapi_define_classType pesapi_define_class_ptr;
-void pesapi_define_class (const void* type_id, const void* super_type_id, const char* type_name,pesapi_constructor constructor, pesapi_finalize finalize, size_t property_count, const pesapi_property_descriptor* properties) {
+void pesapi_define_class (const void* type_id, const void* super_type_id, const char* type_name,pesapi_constructor constructor, pesapi_finalize finalize, size_t property_count, pesapi_property_descriptor properties) {
     pesapi_define_class_ptr(type_id, super_type_id, type_name, constructor, finalize, property_count, properties);
 }
 
@@ -389,7 +425,13 @@ void pesapi_init(pesapi_func_ptr* func_array){    pesapi_create_null_ptr = (pesa
     pesapi_get_property_ptr = (pesapi_get_propertyType)func_array[51];
     pesapi_set_property_ptr = (pesapi_set_propertyType)func_array[52];
     pesapi_call_function_ptr = (pesapi_call_functionType)func_array[53];
-    pesapi_define_class_ptr = (pesapi_define_classType)func_array[54];
+    pesapi_alloc_type_infos_ptr = (pesapi_alloc_type_infosType)func_array[54];
+    pesapi_set_type_info_ptr = (pesapi_set_type_infoType)func_array[55];
+    pesapi_create_signature_info_ptr = (pesapi_create_signature_infoType)func_array[56];
+    pesapi_alloc_property_descriptors_ptr = (pesapi_alloc_property_descriptorsType)func_array[57];
+    pesapi_set_method_info_ptr = (pesapi_set_method_infoType)func_array[58];
+    pesapi_set_property_info_ptr = (pesapi_set_property_infoType)func_array[59];
+    pesapi_define_class_ptr = (pesapi_define_classType)func_array[60];
 }
 
 EXTERN_C_END

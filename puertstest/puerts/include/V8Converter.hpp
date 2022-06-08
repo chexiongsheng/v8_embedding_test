@@ -85,9 +85,9 @@ V8_INLINE v8::Local<v8::Object> GetHolder(const v8::FunctionCallbackInfo<v8::Val
     return info.Holder();
 }
 
-V8_INLINE void ThrowException(v8::Local<v8::Context> context, const char* msg)
+V8_INLINE void ThrowException(const v8::FunctionCallbackInfo<v8::Value>& info, const char* msg)
 {
-    v8::Isolate* isolate = context->GetIsolate();
+    v8::Isolate* isolate = info.GetIsolate();
     isolate->ThrowException(
         v8::Exception::Error(v8::String::NewFromUtf8(isolate, msg, v8::NewStringType::kNormal).ToLocalChecked()));
 }
@@ -95,6 +95,12 @@ V8_INLINE void ThrowException(v8::Local<v8::Context> context, const char* msg)
 V8_INLINE void SetReturn(const v8::FunctionCallbackInfo<v8::Value>& info, v8::Local<v8::Value> value)
 {
     info.GetReturnValue().Set(value);
+}
+
+template <typename T1, typename T2>
+V8_INLINE void LinkOuter(v8::Local<v8::Context> Context, v8::Local<v8::Value> Outer, v8::Local<v8::Value> Inner)
+{
+    LinkOuterImpl(Context, Outer, Inner);
 }
 
 V8_INLINE void UpdateRefValue(v8::Local<v8::Context> context, v8::Local<v8::Value> holder, v8::Local<v8::Value> value)
@@ -298,7 +304,34 @@ struct Converter<bool>
 };
 
 template <typename T>
-struct Converter<std::reference_wrapper<T>, typename std::enable_if<!is_objecttype<T>::value && !is_uetype<T>::value>::type>
+struct Converter<std::reference_wrapper<T>>
+{
+    static v8::Local<v8::Value> toScript(v8::Local<v8::Context> context, const T& value)
+    {
+        auto result = v8::Object::New(context->GetIsolate());
+        auto _unused = result->Set(context, 0, Converter<T>::toScript(context, value));
+        return result;
+    }
+
+    static T* toCpp(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)
+    {
+        if (!value.IsEmpty() && value->IsObject())
+        {
+            auto outer = value->ToObject(context).ToLocalChecked();
+            auto realvalue = outer->Get(context, 0).ToLocalChecked();
+            return Converter<typename std::decay<T>::type*>::toCpp(context, realvalue);
+        }
+        return nullptr;
+    }
+
+    static bool accept(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)
+    {
+        return value->IsObject();    // do not checked inner
+    }
+};
+
+template <typename T>
+struct Converter<T*, typename std::enable_if<is_script_type<T>::value && !std::is_const<T>::value>::type>
 {
     static v8::Local<v8::Value> toScript(v8::Local<v8::Context> context, const T& value)
     {
@@ -309,48 +342,13 @@ struct Converter<std::reference_wrapper<T>, typename std::enable_if<!is_objectty
 
     static T toCpp(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)
     {
-        if (value->IsObject())
-        {
-            auto outer = value->ToObject(context).ToLocalChecked();
-            auto realvalue = outer->Get(context, 0).ToLocalChecked();
-            return Converter<T>::toCpp(context, realvalue);
-        }
-        else
-        {
-            return {};
-        }
-    }
-
-    static bool accept(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)
-    {
-        return value->IsObject();    // do not checked inner
-    }
-};
-
-template <typename T>
-struct Converter<std::reference_wrapper<T>, typename std::enable_if<is_objecttype<T>::value || is_uetype<T>::value>::type>
-{
-    static v8::Local<v8::Value> toScript(v8::Local<v8::Context> context, const T& value)
-    {
-        auto result = v8::Object::New(context->GetIsolate());
-        auto _unused = result->Set(context, 0, Converter<T>::toScript(context, value));
-        return result;
-    }
-
-    static std::reference_wrapper<T> toCpp(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)
-    {
-        static T _result;
         if (!value.IsEmpty() && value->IsObject())
         {
             auto outer = value->ToObject(context).ToLocalChecked();
             auto realvalue = outer->Get(context, 0).ToLocalChecked();
-            auto Ptr = Converter<typename std::decay<T>::type*>::toCpp(context, realvalue);
-            return Ptr ? *Ptr : _result;
+            return Converter<typename std::decay<T>::type>::toCpp(context, realvalue);
         }
-        else
-        {
-            return _result;
-        }
+        return {};
     }
 
     static bool accept(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)
@@ -379,4 +377,10 @@ struct Converter<T, typename std::enable_if<std::is_copy_constructible<T>::value
 };
 
 }    // namespace converter
+
+template <>
+struct is_script_type<std::string> : std::true_type
+{
+};
+
 }    // namespace puerts

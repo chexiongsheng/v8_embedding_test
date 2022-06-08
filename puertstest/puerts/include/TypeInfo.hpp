@@ -71,6 +71,12 @@ struct ScriptTypeName<std::string>
 };
 
 template <>
+struct ScriptTypeName<const char*>
+{
+    static constexpr const char* value = "string";
+};
+
+template <>
 struct ScriptTypeName<bool>
 {
     static constexpr const char* value = "boolean";
@@ -93,12 +99,22 @@ struct StaticTypeId
 };
 
 template <typename T>
-struct is_uetype : public std::false_type
+struct is_uetype : std::false_type
 {
 };
 
 template <typename T>
-struct is_objecttype : public std::false_type
+struct is_objecttype : std::false_type
+{
+};
+
+template <typename T, typename Enable = void>
+struct is_script_type : std::false_type
+{
+};
+
+template <typename T>
+struct is_script_type<T, typename std::enable_if<std::is_fundamental<T>::value>::type> : std::true_type
 {
 };
 
@@ -119,6 +135,7 @@ public:
     virtual const CTypeInfo* Return() const = 0;
     virtual unsigned int ArgumentCount() const = 0;
     virtual const CTypeInfo* Argument(unsigned int index) const = 0;
+    virtual const char* CustomSignature() const = 0;
 };
 
 template <typename T>
@@ -139,15 +156,16 @@ public:
     };
     virtual bool IsConst() const override
     {
-        return std::is_const<T>::value;
+        return std::is_const<typename std::remove_pointer<typename std::decay<T>::type>::type>::value;
     };
     virtual bool IsUEType() const override
     {
-        return is_uetype<typename std::remove_pointer<typename std::decay<T>::type>::type>::value;
+        return is_uetype<typename std::remove_const<typename std::remove_pointer<typename std::decay<T>::type>::type>::type>::value;
     };
     virtual bool IsObjectType() const override
     {
-        return is_objecttype<typename std::remove_pointer<typename std::decay<T>::type>::type>::value;
+        return is_objecttype<
+            typename std::remove_const<typename std::remove_pointer<typename std::decay<T>::type>::type>::type>::value;
     };
 
     static const CTypeInfo* get()
@@ -182,10 +200,43 @@ public:
         return arguments_[index];
     }
 
+    virtual const char* CustomSignature() const override
+    {
+        return nullptr;
+    }
+
     static const CFunctionInfo* get()
     {
         static CFunctionInfoImpl instance{};
         return &instance;
+    }
+};
+
+class CFunctionInfoWithCustomSignature : public CFunctionInfo
+{
+    const char* _signature;
+
+public:
+    CFunctionInfoWithCustomSignature(const char* signature) : _signature(signature)
+    {
+    }
+
+    virtual const CTypeInfo* Return() const override
+    {
+        return nullptr;
+    }
+    virtual unsigned int ArgumentCount() const override
+    {
+        return 0;
+    }
+    virtual const CTypeInfo* Argument(unsigned int index) const override
+    {
+        return nullptr;
+    }
+
+    virtual const char* CustomSignature() const override
+    {
+        return _signature;
     }
 };
 

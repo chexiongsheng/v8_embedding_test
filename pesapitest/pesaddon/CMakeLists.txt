@@ -9,12 +9,13 @@ set(PUERTS_INCLUDE ${PUERTS_LIB_ROOT}/include)
 set(PESAPI_ROOT ../pesapiv8impl)
 set(PESAPI_INCLUDE ${PESAPI_ROOT}/include)
 
-file(GLOB SOURCE_FILES "src/hello.cc")
+file(GLOB SOURCE_FILES "src/hello.cc", "src/TestClass.cc")
 
 
 include_directories(
     ${PESAPI_INCLUDE}
     ${PUERTS_INCLUDE} # for template support
+    "src"
 )
 
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} pesapi_adpt.c)

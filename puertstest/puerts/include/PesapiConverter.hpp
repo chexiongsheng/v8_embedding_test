@@ -119,6 +119,12 @@ inline void SetReturn(pesapi_callback_info info, pesapi_value value)
     pesapi_add_return(info, value);
 }
 
+template <typename T1, typename T2>
+inline void LinkOuter(pesapi_env env, pesapi_value outer, pesapi_value inner)
+{
+    pesapi_set_property_uint32(env, inner, 0, outer);
+}
+
 inline void UpdateRefValue(pesapi_env env, pesapi_value holder, pesapi_value value)
 {
     if (pesapi_is_object(env, holder))
@@ -330,16 +336,20 @@ struct Converter<bool>
 };
 
 template <typename T>
-struct Converter<std::reference_wrapper<T>, typename std::enable_if<!is_objecttype<T>::value>::type>
+struct Converter<std::reference_wrapper<T>>
 {
     static pesapi_value toScript(pesapi_env env, const T& value)
     {
         return pesapi_create_ref(env, Converter<T>::toScript(env, value));
     }
 
-    static T toCpp(pesapi_env env, pesapi_value value)
+    static T* toCpp(pesapi_env env, pesapi_value value)
     {
-        return Converter<T>::toCpp(env, pesapi_get_value_ref(env, value));
+        if (pesapi_is_object(env, value))
+        {
+            return Converter<T*>::toCpp(env, pesapi_get_value_ref(env, value));
+        }
+        return nullptr;
     }
 
     static bool accept(pesapi_env env, pesapi_value value)
@@ -349,24 +359,20 @@ struct Converter<std::reference_wrapper<T>, typename std::enable_if<!is_objectty
 };
 
 template <typename T>
-struct Converter<std::reference_wrapper<T>, typename std::enable_if<is_objecttype<T>::value>::type>
+struct Converter<T*, typename std::enable_if<is_script_type<T>::value && !std::is_const<T>::value>::type>
 {
     static pesapi_value toScript(pesapi_env env, const T& value)
     {
         return pesapi_create_ref(env, Converter<T>::toScript(env, value));
     }
 
-    static std::reference_wrapper<T> toCpp(pesapi_env env, pesapi_value value)
+    static T toCpp(pesapi_env env, pesapi_value value)
     {
-        static T _result;
         if (pesapi_is_object(env, value))
         {
             return Converter<T>::toCpp(env, pesapi_get_value_ref(env, value));
         }
-        else
-        {
-            return _result;
-        }
+        return {};
     }
 
     static bool accept(pesapi_env env, pesapi_value value)
@@ -395,6 +401,12 @@ struct Converter<T, typename std::enable_if<std::is_copy_constructible<T>::value
 };
 
 }    // namespace converter
+
+template <>
+struct is_script_type<std::string> : std::true_type
+{
+};
+
 }    // namespace puerts
 
 #endif

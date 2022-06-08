@@ -1,6 +1,7 @@
 #include <pesapi.h>
 #include <iostream>
 #include <Binding.hpp>
+#include "TestClass.h"
 
 //cpp lib
 class TestClass22 {
@@ -44,12 +45,52 @@ void Init1() {
 
 //cpp template
 UsingCppType(TestClass22);
+UsingCppType(BaseClass);
+UsingCppType(TestClass);
 
 void Init2() {
     puerts::DefineClass<TestClass22>()
         .Constructor()
         .Function("Inc", MakeFunction(&TestClass22::Inc))
         .Method("Cpp", MakeFunction(&TestClass22::Cpp))
+        .Register();
+        
+    puerts::DefineClass<BaseClass>()
+        .Method("Foo", MakeFunction(&BaseClass::Foo))
+        .Register();
+
+    puerts::DefineClass<TestClass>()
+        .Extends<BaseClass>()
+        //.Constructor<int32_t, int32_t>() //if only one Constructor
+        .Constructor(CombineConstructors(
+            MakeConstructor(TestClass, int32_t, int32_t),
+            MakeConstructor(TestClass)
+            ))
+        .Property("X", MakeProperty(&TestClass::X))
+        .Property("Y", MakeProperty(&TestClass::Y))
+        .Variable("StaticInt", MakeVariable(&TestClass::StaticInt))
+        .Variable("Ten", MakeReadonlyVariable(&TestClass::Ten))
+        .Function("Add", MakeFunction(&TestClass::Add))
+        .Function("PrintInfo", MakeFunction(&TestClass::PrintInfo))
+        .Method("GetSelf", MakeFunction(&TestClass::GetSelf))
+        .Method("Ref", MakeFunction(&TestClass::Ref))
+        .Method("StrRef", MakeFunction(&TestClass::StrRef))
+        .Method("Ptr", MakeFunction(&TestClass::Ptr))
+        .Method("CStr", MakeFunction(&TestClass::CStr))
+        .Method("StrPtr", MakeFunction(&TestClass::StrPtr))
+        .Method("ConstRef", MakeFunction(&TestClass::ConstRef))
+        .Function("Overload", CombineOverloads(
+            MakeOverload(void(*)(), &TestClass::Overload),
+            MakeOverload(void(*)(int32_t), &TestClass::Overload),
+            MakeOverload(void(*)(int32_t, int32_t), &TestClass::Overload),
+            MakeOverload(void(*)(std::string, int32_t), &TestClass::Overload)
+            ))
+        .Method("OverloadMethod", CombineOverloads(
+            MakeOverload(int32_t(TestClass::*)(), &TestClass::OverloadMethod),
+            MakeOverload(int32_t(TestClass::*)(int32_t), &TestClass::OverloadMethod),
+            MakeOverload(uint32_t(TestClass::*)(uint32_t), &TestClass::OverloadMethod),
+            MakeOverload(int64_t(TestClass::*)(int64_t), &TestClass::OverloadMethod)
+            ))
         .Register();
 }
 

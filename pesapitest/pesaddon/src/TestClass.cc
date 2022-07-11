@@ -1,4 +1,5 @@
 #include "TestClass.h"
+#include "Object.hpp"
 
 void BaseClass::Foo(int p)
 {
@@ -102,3 +103,24 @@ void TestClass::ConstRef(const int32_t & a)
 int TestClass::StaticInt = 0;
 
 const float TestClass::Ten = 10;
+
+
+AdvanceTestClass::AdvanceTestClass(int A)
+{
+}
+
+void AdvanceTestClass::JsObjectTest(puerts::Object Obj)
+{
+    auto P = Obj.Get<int>("p");
+    Obj.Set<std::string>("q", "john");
+}
+
+void AdvanceTestClass::CallJsObjectTest(puerts::Function Func)
+{
+    auto Ret = Func.Func<float>(1024, "che");
+}
+
+void AdvanceTestClass::StdFunctionTest(std::function<int(int, int)> Func)
+{
+    int Ret = Func(88, 99);
+}

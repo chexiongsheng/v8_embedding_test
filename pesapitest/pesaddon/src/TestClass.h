@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <functional>
+#include "Object.hpp"
 
 class BaseClass
 {
@@ -59,3 +61,17 @@ public:
 
     static const float Ten;
 };
+
+
+class AdvanceTestClass
+{
+public:
+    AdvanceTestClass(int A);
+
+    void JsObjectTest(puerts::Object Obj);
+
+    void CallJsObjectTest(puerts::Function Func);
+
+    void StdFunctionTest(std::function<int(int, int)> Func);
+};
+

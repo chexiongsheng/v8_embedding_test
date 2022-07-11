@@ -803,7 +803,7 @@ struct FuncCallWrapper<Ret (*)(Args...), func, ReturnByPointer, ScriptTypePtrAsR
     }
     static const CFunctionInfo* info(unsigned int defaultCount = 0)
     {
-        return CFunctionInfoImpl<Ret, ScriptTypePtrAsRef, Args...>::get(defaultCount);
+        return CFunctionInfoByPtrImpl<Ret (*)(Args...), func, ScriptTypePtrAsRef>::get(defaultCount);
     }
 };
 
@@ -843,7 +843,7 @@ struct FuncCallWrapper<Ret (Inc::*)(Args...), func, ReturnByPointer, ScriptTypeP
     }
     static const CFunctionInfo* info(unsigned int defaultCount = 0)
     {
-        return CFunctionInfoImpl<Ret, ScriptTypePtrAsRef, Args...>::get(defaultCount);
+        return CFunctionInfoByPtrImpl<Ret (Inc::*)(Args...), func, ScriptTypePtrAsRef>::get(defaultCount);
     }
 };
 
@@ -885,7 +885,7 @@ struct FuncCallWrapper<Ret (Inc::*)(Args...) const, func, ReturnByPointer, Scrip
     }
     static const CFunctionInfo* info(unsigned int defaultCount = 0)
     {
-        return CFunctionInfoImpl<Ret, ScriptTypePtrAsRef, Args...>::get(defaultCount);
+        return CFunctionInfoByPtrImpl<Ret (Inc::*)(Args...) const, func, ScriptTypePtrAsRef>::get(defaultCount);
     }
 };
 
@@ -1060,7 +1060,7 @@ struct PropertyWrapper<Ret Ins::*, member,
 
     static const char* info()
     {
-        return ScriptTypeName<Ret>::value;
+        return ScriptTypeName<Ret>::value.Data();
     }
 };
 
@@ -1106,7 +1106,7 @@ struct PropertyWrapper<Ret Ins::*, member,
 
     static const char* info()
     {
-        return ScriptTypeName<Ret>::value;
+        return ScriptTypeName<Ret>::value.Data();
     }
 };
 
@@ -1141,7 +1141,7 @@ struct PropertyWrapper<Ret Ins::*, member, typename std::enable_if<is_objecttype
 
     static const char* info()
     {
-        return ScriptTypeName<Ret>::value;
+        return ScriptTypeName<Ret>::value.Data();
     }
 };
 
@@ -1162,7 +1162,7 @@ struct PropertyWrapper<Ret*, Variable>
 
     static const char* info()
     {
-        return ScriptTypeName<Ret>::value;
+        return ScriptTypeName<Ret>::value.Data();
     }
 };
 
@@ -1414,7 +1414,7 @@ public:
 template <typename T>
 inline ClassDefineBuilder<T> DefineClass()
 {
-    return ClassDefineBuilder<T>(ScriptTypeName<T>::value);
+    return ClassDefineBuilder<T>(ScriptTypeName<T>::value.Data());
 }
 
 }    // namespace puerts

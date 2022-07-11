@@ -47,6 +47,7 @@ void Init1() {
 UsingCppType(TestClass22);
 UsingCppType(BaseClass);
 UsingCppType(TestClass);
+UsingCppType(AdvanceTestClass);
 
 void Init2() {
     puerts::DefineClass<TestClass22>()
@@ -91,6 +92,13 @@ void Init2() {
             MakeOverload(uint32_t(TestClass::*)(uint32_t), &TestClass::OverloadMethod),
             MakeOverload(int64_t(TestClass::*)(int64_t), &TestClass::OverloadMethod)
             ))
+        .Register();
+        
+    puerts::DefineClass<AdvanceTestClass>()
+        .Constructor<int>() //if only one Constructor
+        .Method("JsObjectTest", MakeFunction(&AdvanceTestClass::JsObjectTest))
+        .Method("CallJsObjectTest", MakeFunction(&AdvanceTestClass::CallJsObjectTest))
+        .Method("StdFunctionTest", MakeFunction(&AdvanceTestClass::StdFunctionTest))
         .Register();
 }
 

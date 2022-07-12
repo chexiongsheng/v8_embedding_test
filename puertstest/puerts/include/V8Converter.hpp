@@ -592,28 +592,19 @@ struct is_script_type<std::string> : std::true_type
 template <typename T, size_t Size>
 struct ScriptTypeName<T[Size], typename std::enable_if<is_script_type<T>::value && !std::is_const<T>::value>::type>
 {
-    static constexpr auto value()
-    {
-        return Literal("ArrayBuffer");
-    }
+    static constexpr auto value = Literal("ArrayBuffer");
 };
 
 template <>
 struct ScriptTypeName<void*>
 {
-    static constexpr auto value()
-    {
-        return Literal("ArrayBuffer");
-    }
+    static constexpr auto value = Literal("ArrayBuffer");
 };
 
 template <>
 struct ScriptTypeName<const void*>
 {
-    static constexpr auto value()
-    {
-        return Literal("ArrayBuffer");
-    }
+    static constexpr auto value = Literal("ArrayBuffer");
 };
 
 }    // namespace puerts

@@ -151,19 +151,13 @@ private:
 template <>
 struct ScriptTypeName<Object>
 {
-    static constexpr auto value()
-    {
-        return Literal("object");
-    }
+    static constexpr const char* value = "object";
 };
 
 template <>
 struct ScriptTypeName<::puerts::Function>
 {
-    static constexpr auto value()
-    {
-        return Literal("Function");
-    }
+    static constexpr const char* value = "Function";
 };
 
 namespace converter

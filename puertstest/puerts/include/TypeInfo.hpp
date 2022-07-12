@@ -10,14 +10,17 @@
 
 #include <string>
 
-#define __DefScriptTTypeName(CLSNAME, CLS)               \
-    namespace puerts                                     \
-    {                                                    \
-    template <>                                          \
-    struct ScriptTypeName<CLS>                           \
-    {                                                    \
-        static constexpr auto value = Literal(#CLSNAME); \
-    };                                                   \
+#define __DefScriptTTypeName(CLSNAME, CLS) \
+    namespace puerts                       \
+    {                                      \
+    template <>                            \
+    struct ScriptTypeName<CLS>             \
+    {                                      \
+        static constexpr auto value()      \
+        {                                  \
+            return Literal(#CLSNAME);      \
+        }                                  \
+    };                                     \
     }
 
 namespace puerts
@@ -81,62 +84,92 @@ struct ScriptTypeName
 template <typename T>
 struct ScriptTypeName<T*>
 {
-    static constexpr auto value = ScriptTypeName<typename std::remove_cv<T>::type>::value;
+    static constexpr auto value()
+    {
+        return ScriptTypeName<typename std::remove_cv<T>::type>::value();
+    }
 };
 
 template <typename T>
 struct ScriptTypeName<T&>
 {
-    static constexpr auto value = ScriptTypeName<typename std::remove_cv<T>::type>::value;
+    static constexpr auto value()
+    {
+        return ScriptTypeName<typename std::remove_cv<T>::type>::value();
+    }
 };
 
 template <typename T>
 struct ScriptTypeName<T&&>
 {
-    static constexpr auto value = ScriptTypeName<typename std::remove_cv<T>::type>::value;
+    static constexpr auto value()
+    {
+        return ScriptTypeName<typename std::remove_cv<T>::type>::value();
+    }
 };
 
 template <typename T>
 struct ScriptTypeName<T, typename std::enable_if<std::is_integral<T>::value && sizeof(T) == 8>::type>
 {
-    static constexpr auto value = Literal("bigint");
+    static constexpr auto value()
+    {
+        return Literal("bigint");
+    }
 };
 
 template <typename T>
 struct ScriptTypeName<T, typename std::enable_if<std::is_enum<T>::value>::type>
 {
-    static constexpr auto value = Literal("number");
+    static constexpr auto value()
+    {
+        return Literal("number");
+    }
 };
 
 template <typename T>
 struct ScriptTypeName<T,
     typename std::enable_if<std::is_floating_point<T>::value || (std::is_integral<T>::value && sizeof(T) < 8)>::type>
 {
-    static constexpr auto value = Literal("number");
+    static constexpr auto value()
+    {
+        return Literal("number");
+    }
 };
 
 template <>
 struct ScriptTypeName<std::string>
 {
-    static constexpr auto value = Literal("string");
+    static constexpr auto value()
+    {
+        return Literal("string");
+    }
 };
 
 template <>
 struct ScriptTypeName<const char*>
 {
-    static constexpr auto value = Literal("cstring");
+    static constexpr auto value()
+    {
+        return Literal("cstring");
+    }
 };
 
 template <>
 struct ScriptTypeName<bool>
 {
-    static constexpr auto value = Literal("boolean");
+    static constexpr auto value()
+    {
+        return Literal("boolean");
+    }
 };
 
 template <>
 struct ScriptTypeName<void>
 {
-    static constexpr auto value = Literal("void");
+    static constexpr auto value()
+    {
+        return Literal("void");
+    }
 };
 
 template <typename T>
@@ -197,7 +230,7 @@ class CTypeInfoImpl : CTypeInfo
 public:
     virtual const char* Name() const override
     {
-        static const char* name = ScriptTypeName<T>::value.Data();
+        static constexpr const char* name = ScriptTypeName<T>::value().Data();
         return name;
     }
     virtual bool IsPointer() const override

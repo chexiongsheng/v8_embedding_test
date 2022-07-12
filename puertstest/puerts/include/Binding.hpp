@@ -1060,7 +1060,7 @@ struct PropertyWrapper<Ret Ins::*, member,
 
     static const char* info()
     {
-        static constexpr const char* name = ScriptTypeName<Ret>::value().Data();
+        static const char* name = ScriptTypeName<Ret>::value().Data();
         return name;
     }
 };
@@ -1107,7 +1107,7 @@ struct PropertyWrapper<Ret Ins::*, member,
 
     static const char* info()
     {
-        static constexpr const char* name = ScriptTypeName<Ret>::value().Data();
+        static const char* name = ScriptTypeName<Ret>::value().Data();
         return name;
     }
 };
@@ -1143,7 +1143,7 @@ struct PropertyWrapper<Ret Ins::*, member, typename std::enable_if<is_objecttype
 
     static const char* info()
     {
-        static constexpr const char* name = ScriptTypeName<Ret>::value().Data();
+        static const char* name = ScriptTypeName<Ret>::value().Data();
         return name;
     }
 };
@@ -1165,7 +1165,7 @@ struct PropertyWrapper<Ret*, Variable>
 
     static const char* info()
     {
-        static constexpr const char* name = ScriptTypeName<Ret>::value().Data();
+        static const char* name = ScriptTypeName<Ret>::value().Data();
         return name;
     }
 };

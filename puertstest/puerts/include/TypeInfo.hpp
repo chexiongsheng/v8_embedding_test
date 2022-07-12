@@ -230,7 +230,7 @@ class CTypeInfoImpl : CTypeInfo
 public:
     virtual const char* Name() const override
     {
-        static constexpr const char* name = ScriptTypeName<T>::value().Data();
+        static const char* name = ScriptTypeName<T>::value().Data();
         return name;
     }
     virtual bool IsPointer() const override

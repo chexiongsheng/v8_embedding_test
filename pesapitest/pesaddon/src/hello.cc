@@ -71,6 +71,7 @@ void Init2() {
         .Property("Y", MakeProperty(&TestClass::Y))
         .Variable("StaticInt", MakeVariable(&TestClass::StaticInt))
         .Variable("Ten", MakeReadonlyVariable(&TestClass::Ten))
+        .Variable("IntArray", MakeReadonlyVariable(&TestClass::IntArray))
         .Function("Add", MakeFunction(&TestClass::Add))
         .Function("PrintInfo", MakeFunction(&TestClass::PrintInfo))
         .Method("GetSelf", MakeFunction(&TestClass::GetSelf))
@@ -80,6 +81,7 @@ void Init2() {
         .Method("CStr", MakeFunction(&TestClass::CStr))
         .Method("StrPtr", MakeFunction(&TestClass::StrPtr))
         .Method("ConstRef", MakeFunction(&TestClass::ConstRef))
+        .Method("VoidPtr", MakeFunction(&TestClass::VoidPtr))
         .Function("Overload", CombineOverloads(
             MakeOverload(void(*)(), &TestClass::Overload),
             MakeOverload(void(*)(int32_t), &TestClass::Overload),

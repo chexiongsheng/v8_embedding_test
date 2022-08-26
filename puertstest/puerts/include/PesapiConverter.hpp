@@ -27,28 +27,28 @@
     };                                                \
     }
 
-#define __DefCDataPointerConverter(CLS)                                                              \
-    namespace puerts                                                                                 \
-    {                                                                                                \
-    namespace converter                                                                              \
-    {                                                                                                \
-    template <>                                                                                      \
-    struct Converter<CLS*>                                                                           \
-    {                                                                                                \
-        static pesapi_value toScript(pesapi_env env, CLS* value)                                     \
-        {                                                                                            \
-            return pesapi_create_native_object(env, puerts::StaticTypeId<CLS>::get(), value, false); \
-        }                                                                                            \
-        static CLS* toCpp(pesapi_env env, pesapi_value value)                                        \
-        {                                                                                            \
-            return static_cast<CLS*>(pesapi_get_native_object_ptr(env, value));                      \
-        }                                                                                            \
-        static bool accept(pesapi_env env, pesapi_value value)                                       \
-        {                                                                                            \
-            return pesapi_is_native_object(env, puerts::StaticTypeId<CLS>::get(), value);            \
-        }                                                                                            \
-    };                                                                                               \
-    }                                                                                                \
+#define __DefCDataPointerConverter(CLS)                                                                    \
+    namespace puerts                                                                                       \
+    {                                                                                                      \
+    namespace converter                                                                                    \
+    {                                                                                                      \
+    template <>                                                                                            \
+    struct Converter<CLS*>                                                                                 \
+    {                                                                                                      \
+        static pesapi_value toScript(pesapi_env env, CLS* value)                                           \
+        {                                                                                                  \
+            return pesapi_create_native_object(env, puerts::DynamicTypeId<CLS>::get(value), value, false); \
+        }                                                                                                  \
+        static CLS* toCpp(pesapi_env env, pesapi_value value)                                              \
+        {                                                                                                  \
+            return static_cast<CLS*>(pesapi_get_native_object_ptr(env, value));                            \
+        }                                                                                                  \
+        static bool accept(pesapi_env env, pesapi_value value)                                             \
+        {                                                                                                  \
+            return pesapi_is_native_object(env, puerts::StaticTypeId<CLS>::get(), value);                  \
+        }                                                                                                  \
+    };                                                                                                     \
+    }                                                                                                      \
     }
 
 namespace puerts
@@ -82,7 +82,7 @@ struct GeneralFunctionReflectionInfo
 struct GeneralPropertyReflectionInfo
 {
     const char* Name;
-    const char* Type;
+    const CTypeInfo* Type;
 };
 
 inline int GetArgsLen(pesapi_callback_info info)
@@ -160,14 +160,23 @@ public:
     {
         if (!value)
             return;
-        size_t length = 0;
-        str_ = (char*) pesapi_get_value_string_utf8(env, value, nullptr, &length);
-        needFree_ = false;
-        if (!str_)
+        if (pesapi_is_binary(env, value))
         {
-            str_ = new char[length + 1];
-            pesapi_get_value_string_utf8(env, value, str_, &length);
-            needFree_ = true;
+            needFree_ = false;
+            size_t length = 0;
+            str_ = (char*) pesapi_get_value_binary(env, value, &length);
+        }
+        else
+        {
+            size_t length = 0;
+            str_ = (char*) pesapi_get_value_string_utf8(env, value, nullptr, &length);
+            needFree_ = false;
+            if (!str_)
+            {
+                str_ = new char[length + 1];
+                pesapi_get_value_string_utf8(env, value, str_, &length);
+                needFree_ = true;
+            }
         }
     }
 
@@ -365,6 +374,26 @@ struct Converter<const char*>
 };
 
 template <>
+struct Converter<void*>
+{
+    static pesapi_value toScript(pesapi_env env, void* value)
+    {
+        return pesapi_create_binary(env, value, 0);
+    }
+
+    static void* toCpp(pesapi_env env, pesapi_value value)
+    {
+        size_t bufsize;
+        return pesapi_get_value_binary(env, value, &bufsize);
+    }
+
+    static bool accept(pesapi_env env, pesapi_value value)
+    {
+        return pesapi_is_binary(env, value);
+    }
+};
+
+template <>
 struct Converter<bool>
 {
     static pesapi_value toScript(pesapi_env env, bool value)
@@ -425,13 +454,49 @@ struct Converter<std::reference_wrapper<T>, typename std::enable_if<is_objecttyp
     }
 };
 
+template <typename T>
+struct Converter<T,
+    typename std::enable_if<is_script_type<typename std::remove_pointer<T>::type>::value && !std::is_array<T>::value &&
+                            !std::is_const<typename std::remove_pointer<T>::type>::value && std::is_pointer<T>::value>::type>
+{
+    static pesapi_value toScript(pesapi_env env, T value)
+    {
+        return pesapi_create_binary(env, value, 0);
+    }
+
+    static T toCpp(pesapi_env env, pesapi_value value)
+    {
+        size_t bufsize;
+        return static_cast<T>(pesapi_get_value_binary(env, value, &bufsize));
+    }
+
+    static bool accept(pesapi_env env, pesapi_value value)
+    {
+        return pesapi_is_binary(env, value);
+    }
+};
+
+template <typename T, std::size_t Size>
+struct Converter<T[Size], typename std::enable_if<is_script_type<T>::value && !std::is_const<T>::value>::type>
+{
+    static pesapi_value toScript(pesapi_env env, T value[Size])
+    {
+        return pesapi_create_binary(env, value, sizeof(T) * Size);
+    }
+
+    static bool accept(pesapi_env env, pesapi_value value)
+    {
+        return pesapi_is_binary(env, value);
+    }
+};
+
 template <class T>
 struct Converter<T, typename std::enable_if<std::is_copy_constructible<T>::value && std::is_constructible<T>::value &&
                                             is_objecttype<T>::value && !is_uetype<T>::value>::type>
 {
     static pesapi_value toScript(pesapi_env env, T value)
     {
-        return pesapi_create_native_object(env, puerts::StaticTypeId<T>::get(), new T(value), false);
+        return pesapi_create_native_object(env, puerts::DynamicTypeId<T>::get(&value), new T(value), false);
     }
     static T toCpp(pesapi_env env, pesapi_value value)
     {
@@ -449,6 +514,33 @@ struct Converter<T, typename std::enable_if<std::is_copy_constructible<T>::value
 template <>
 struct is_script_type<std::string> : std::true_type
 {
+};
+
+template <typename T, size_t Size>
+struct ScriptTypeName<T[Size], typename std::enable_if<is_script_type<T>::value && !std::is_const<T>::value>::type>
+{
+    static constexpr auto value()
+    {
+        return Literal("ArrayBuffer");
+    }
+};
+
+template <>
+struct ScriptTypeName<void*>
+{
+    static constexpr auto value()
+    {
+        return Literal("ArrayBuffer");
+    }
+};
+
+template <>
+struct ScriptTypeName<const void*>
+{
+    static constexpr auto value()
+    {
+        return Literal("ArrayBuffer");
+    }
 };
 
 }    // namespace puerts

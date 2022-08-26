@@ -56,6 +56,10 @@ public:
     void StrPtr(std::string * str);
 
 	void ConstRef(const int32_t & a);
+    
+    void VoidPtr(void* P){}
+    
+    int32_t IntArray[16];
 
     static int StaticInt;
 

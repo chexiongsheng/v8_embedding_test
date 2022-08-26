@@ -65,7 +65,7 @@ public:
         auto object = pesapi_get_value_from_holder(env, value_holder);
 
         auto value = pesapi_get_property(env, object, key);
-        if (pesapi_is_undefined(env, value))
+        if (!pesapi_is_undefined(env, value))
         {
             return puerts::converter::Converter<T>::toCpp(env, value);
         }
@@ -90,7 +90,12 @@ public:
         return val && pesapi_is_object(env, val);
     }
 
-protected:
+    void operator=(const Object& obj)
+    {
+        env_holder = pesapi_duplicate_env_holder(obj.env_holder);
+        value_holder = pesapi_duplicate_value_holder(obj.value_holder);
+    }
+
     pesapi_env_holder env_holder;
     pesapi_value_holder value_holder;
 

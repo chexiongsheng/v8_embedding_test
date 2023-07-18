@@ -2,7 +2,7 @@
 
 #include <string>
 #include <functional>
-#include "Object.hpp"
+#include "Binding.hpp"
 
 class BaseClass
 {

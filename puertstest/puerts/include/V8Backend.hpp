@@ -26,7 +26,7 @@
 #define __DefCDataPointerConverter(CLS)                                                               \
     namespace puerts                                                                                  \
     {                                                                                                 \
-    namespace converter                                                                               \
+    namespace v8_impl                                                                                 \
     {                                                                                                 \
     template <>                                                                                       \
     struct Converter<CLS*>                                                                            \
@@ -51,87 +51,173 @@
 
 namespace puerts
 {
-typedef const v8::FunctionCallbackInfo<v8::Value>& CallbackInfoType;
-typedef v8::Local<v8::Context> ContextType;
-typedef v8::Local<v8::Value> ValueType;
-typedef v8::FunctionCallback FunctionCallbackType;
-typedef InitializeFunc InitializeFuncType;
-typedef JSFunctionInfo GeneralFunctionInfo;
-typedef JSPropertyInfo GeneralPropertyInfo;
-typedef NamedFunctionInfo GeneralFunctionReflectionInfo;
-typedef NamedPropertyInfo GeneralPropertyReflectionInfo;
+namespace v8_impl
+{
+template <typename T, typename Enable = void>
+struct Converter;
 
-V8_INLINE int GetArgsLen(const v8::FunctionCallbackInfo<v8::Value>& info)
+template <typename T, typename = void>
+struct CustomArgumentBufferType
 {
-    return info.Length();
-}
+    static constexpr bool enable = false;
+};
 
-V8_INLINE v8::Local<v8::Value> GetArg(const v8::FunctionCallbackInfo<v8::Value>& info, int index)
+struct API
 {
-    return info[index];
-}
+    typedef const v8::FunctionCallbackInfo<v8::Value>& CallbackInfoType;
+    typedef v8::Local<v8::Context> ContextType;
+    typedef v8::Local<v8::Value> ValueType;
+    typedef v8::FunctionCallback FunctionCallbackType;
+    typedef InitializeFunc InitializeFuncType;
+    typedef JSFunctionInfo GeneralFunctionInfo;
+    typedef JSPropertyInfo GeneralPropertyInfo;
+    typedef NamedFunctionInfo GeneralFunctionReflectionInfo;
+    typedef NamedPropertyInfo GeneralPropertyReflectionInfo;
 
-V8_INLINE v8::Local<v8::Context> GetContext(const v8::FunctionCallbackInfo<v8::Value>& info)
-{
-    return info.GetIsolate()->GetCurrentContext();
-}
-V8_INLINE v8::Local<v8::Object> GetThis(const v8::FunctionCallbackInfo<v8::Value>& info)
-{
-    return info.This();
-}
-
-V8_INLINE v8::Local<v8::Object> GetHolder(const v8::FunctionCallbackInfo<v8::Value>& info)
-{
-    return info.Holder();
-}
-
-V8_INLINE void ThrowException(const v8::FunctionCallbackInfo<v8::Value>& info, const char* msg)
-{
-    v8::Isolate* isolate = info.GetIsolate();
-    isolate->ThrowException(
-        v8::Exception::Error(v8::String::NewFromUtf8(isolate, msg, v8::NewStringType::kNormal).ToLocalChecked()));
-}
-
-V8_INLINE void SetReturn(const v8::FunctionCallbackInfo<v8::Value>& info, v8::Local<v8::Value> value)
-{
-    info.GetReturnValue().Set(value);
-}
-
-template <typename T1, typename T2>
-V8_INLINE void LinkOuter(v8::Local<v8::Context> Context, v8::Local<v8::Value> Outer, v8::Local<v8::Value> Inner)
-{
-    LinkOuterImpl(Context, Outer, Inner);
-}
-
-V8_INLINE void UpdateRefValue(v8::Local<v8::Context> context, v8::Local<v8::Value> holder, v8::Local<v8::Value> value)
-{
-    if (holder->IsObject())
+    V8_INLINE static int GetArgsLen(const v8::FunctionCallbackInfo<v8::Value>& info)
     {
-        auto outer = holder->ToObject(context).ToLocalChecked();
-        auto _unused = outer->Set(context, 0, value);
+        return info.Length();
     }
-}
 
-template <typename T>
-V8_INLINE T* FastGetNativeObjectPointer(v8::Local<v8::Context> context, v8::Local<v8::Object> Object)
-{
-    return DataTransfer::GetPointerFast<T>(Object);
-}
+    V8_INLINE static v8::Local<v8::Value> GetArg(const v8::FunctionCallbackInfo<v8::Value>& info, int index)
+    {
+        return info[index];
+    }
 
-V8_INLINE v8::Local<v8::Value> GetUndefined(v8::Local<v8::Context> context)
-{
-    return v8::Undefined(context->GetIsolate());
-}
+    V8_INLINE static v8::Local<v8::Context> GetContext(const v8::FunctionCallbackInfo<v8::Value>& info)
+    {
+        return info.GetIsolate()->GetCurrentContext();
+    }
+    V8_INLINE static v8::Local<v8::Object> GetThis(const v8::FunctionCallbackInfo<v8::Value>& info)
+    {
+        return info.This();
+    }
 
-V8_INLINE bool IsNullOrUndefined(v8::Local<v8::Context> context, v8::Local<v8::Value> val)
-{
-    return val->IsNullOrUndefined();
-}
+    V8_INLINE static v8::Local<v8::Object> GetHolder(const v8::FunctionCallbackInfo<v8::Value>& info)
+    {
+        return info.Holder();
+    }
 
-}    // namespace puerts
+    V8_INLINE static void ThrowException(const v8::FunctionCallbackInfo<v8::Value>& info, const char* msg)
+    {
+        v8::Isolate* isolate = info.GetIsolate();
+        isolate->ThrowException(
+            v8::Exception::Error(v8::String::NewFromUtf8(isolate, msg, v8::NewStringType::kNormal).ToLocalChecked()));
+    }
 
-namespace puerts
-{
+    V8_INLINE static void SetReturn(const v8::FunctionCallbackInfo<v8::Value>& info, v8::Local<v8::Value> value)
+    {
+        info.GetReturnValue().Set(value);
+    }
+
+    template <typename T1, typename T2>
+    V8_INLINE static void LinkOuter(v8::Local<v8::Context> Context, v8::Local<v8::Value> Outer, v8::Local<v8::Value> Inner)
+    {
+        LinkOuterImpl(Context, Outer, Inner);
+    }
+
+    V8_INLINE static void UpdateRefValue(v8::Local<v8::Context> context, v8::Local<v8::Value> holder, v8::Local<v8::Value> value)
+    {
+        if (holder->IsObject())
+        {
+            auto outer = holder->ToObject(context).ToLocalChecked();
+            auto _unused = outer->Set(context, 0, value);
+        }
+    }
+
+    template <typename T>
+    V8_INLINE static T* FastGetNativeObjectPointer(v8::Local<v8::Context> context, v8::Local<v8::Object> Object)
+    {
+        return DataTransfer::GetPointerFast<T>(Object);
+    }
+
+    V8_INLINE static v8::Local<v8::Value> GetUndefined(v8::Local<v8::Context> context)
+    {
+        return v8::Undefined(context->GetIsolate());
+    }
+
+    V8_INLINE static bool IsNullOrUndefined(v8::Local<v8::Context> context, v8::Local<v8::Value> val)
+    {
+        return val->IsNullOrUndefined();
+    }
+
+    template <typename T, typename CDB>
+    static void Register(FinalizeFunc Finalize, const CDB& Cdb)
+    {
+        const bool isUEType = puerts::is_uetype<T>::value;
+        static std::vector<JSFunctionInfo> s_functions_{};
+        static std::vector<JSFunctionInfo> s_methods_{};
+        static std::vector<JSPropertyInfo> s_properties_{};
+        static std::vector<JSPropertyInfo> s_variables_{};
+
+        static std::vector<NamedFunctionInfo> s_constructorInfos_{};
+        static std::vector<NamedFunctionInfo> s_methodInfos_{};
+        static std::vector<NamedFunctionInfo> s_functionInfos_{};
+        static std::vector<NamedPropertyInfo> s_propertyInfos_{};
+        static std::vector<NamedPropertyInfo> s_variableInfos_{};
+
+        puerts::JSClassDefinition ClassDef = JSClassEmptyDefinition;
+
+        if (isUEType)
+        {
+            ClassDef.UETypeName = Cdb.className_;
+        }
+        else
+        {
+            ClassDef.ScriptName = Cdb.className_;
+            ClassDef.TypeId = StaticTypeId<T>::get();
+            ClassDef.SuperTypeId = Cdb.superTypeId_;
+        }
+
+        ClassDef.Initialize = Cdb.constructor_;
+        ClassDef.Finalize = Finalize;
+
+        s_functions_ = std::move(Cdb.functions_);
+        s_functions_.push_back({nullptr, nullptr, nullptr});
+        ClassDef.Functions = s_functions_.data();
+
+        s_methods_ = std::move(Cdb.methods_);
+        s_methods_.push_back({nullptr, nullptr, nullptr});
+        ClassDef.Methods = s_methods_.data();
+
+        s_properties_ = std::move(Cdb.properties_);
+        s_properties_.push_back(JSPropertyInfo{nullptr, nullptr, nullptr, nullptr});
+        ClassDef.Properties = s_properties_.data();
+
+        s_variables_ = std::move(Cdb.variables_);
+        s_variables_.push_back(JSPropertyInfo{nullptr, nullptr, nullptr, nullptr});
+        ClassDef.Variables = s_variables_.data();
+
+        s_constructorInfos_ = std::move(Cdb.constructorInfos_);
+        s_constructorInfos_.push_back(NamedFunctionInfo{nullptr, nullptr});
+        ClassDef.ConstructorInfos = s_constructorInfos_.data();
+
+        s_methodInfos_ = std::move(Cdb.methodInfos_);
+        s_methodInfos_.push_back(NamedFunctionInfo{nullptr, nullptr});
+        ClassDef.MethodInfos = s_methodInfos_.data();
+
+        s_functionInfos_ = std::move(Cdb.functionInfos_);
+        s_functionInfos_.push_back(NamedFunctionInfo{nullptr, nullptr});
+        ClassDef.FunctionInfos = s_functionInfos_.data();
+
+        s_propertyInfos_ = std::move(Cdb.propertyInfos_);
+        s_propertyInfos_.push_back(NamedPropertyInfo{nullptr, nullptr});
+        ClassDef.PropertyInfos = s_propertyInfos_.data();
+
+        s_variableInfos_ = std::move(Cdb.variableInfos_);
+        s_variableInfos_.push_back(NamedPropertyInfo{nullptr, nullptr});
+        ClassDef.VariableInfos = s_variableInfos_.data();
+
+        puerts::RegisterJSClass(ClassDef);
+    }
+
+    template <typename T>
+    using Converter = Converter<T>;
+
+    template <typename T>
+    using CustomArgumentBufferType = CustomArgumentBufferType<T>;
+};
+
 class StringHolder
 {
 public:
@@ -197,16 +283,11 @@ private:
 };
 
 template <>
-struct ArgumentBufferType<const char*>
+struct CustomArgumentBufferType<const char*>
 {
     using type = StringHolder;
-    static constexpr bool is_custom = true;
+    static constexpr bool enable = true;
 };
-
-namespace converter
-{
-template <typename T, typename Enable = void>
-struct Converter;
 
 template <typename T>
 struct Converter<T, typename std::enable_if<std::is_integral<T>::value && sizeof(T) == 8 && std::is_signed<T>::value>::type>
@@ -218,7 +299,7 @@ struct Converter<T, typename std::enable_if<std::is_integral<T>::value && sizeof
 
     static T toCpp(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)
     {
-        return static_cast<T>(value->ToBigInt(context).ToLocalChecked()->Int64Value());
+        return value->IsBigInt() ? static_cast<T>(value->ToBigInt(context).ToLocalChecked()->Int64Value()) : 0;
     }
 
     static bool accept(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)
@@ -237,7 +318,7 @@ struct Converter<T, typename std::enable_if<std::is_integral<T>::value && sizeof
 
     static T toCpp(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)
     {
-        return static_cast<T>(value->ToBigInt(context).ToLocalChecked()->Uint64Value());
+        return value->IsBigInt() ? static_cast<T>(value->ToBigInt(context).ToLocalChecked()->Uint64Value()) : 0;
     }
 
     static bool accept(v8::Local<v8::Context> context, const v8::Local<v8::Value>& value)
@@ -387,6 +468,10 @@ struct Converter<void*>
 #else
             return Ab->GetContents().Data();
 #endif
+        }
+        if (value->IsObject())
+        {
+            return ::puerts::DataTransfer::GetPointerFast<void>(value.As<v8::Object>());
         }
 
         return nullptr;
@@ -587,7 +672,7 @@ struct Converter<const T*,
     }
 };
 
-}    // namespace converter
+}    // namespace v8_impl
 
 template <>
 struct is_script_type<std::string> : std::true_type
@@ -599,7 +684,7 @@ struct ScriptTypeName<T[Size], typename std::enable_if<is_script_type<T>::value 
 {
     static constexpr auto value()
     {
-        return Literal("ArrayBuffer");
+        return internal::Literal("ArrayBuffer");
     }
 };
 
@@ -608,7 +693,7 @@ struct ScriptTypeName<void*>
 {
     static constexpr auto value()
     {
-        return Literal("ArrayBuffer");
+        return internal::Literal("any");
     }
 };
 
@@ -617,7 +702,7 @@ struct ScriptTypeName<const void*>
 {
     static constexpr auto value()
     {
-        return Literal("ArrayBuffer");
+        return internal::Literal("any");
     }
 };
 

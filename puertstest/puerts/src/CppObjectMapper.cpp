@@ -109,6 +109,11 @@ bool FCppObjectMapper::IsInstanceOfCppObject(const void* TypeId, v8::Local<v8::O
     return DataTransfer::GetPointerFast<const void>(JsObject, 1) == TypeId;
 }
 
+std::weak_ptr<int> FCppObjectMapper::GetJsEnvLifeCycleTracker()
+{
+    return std::weak_ptr<int>(Ref);
+}
+
 static void CDataNew(const v8::FunctionCallbackInfo<v8::Value>& Info)
 {
     v8::Isolate* Isolate = Info.GetIsolate();
@@ -134,6 +139,8 @@ static void CDataNew(const v8::FunctionCallbackInfo<v8::Value>& Info)
         {
             if (ClassDefinition->Initialize)
                 Ptr = ClassDefinition->Initialize(Info);
+            if (Ptr == nullptr)
+                return;
         }
         DataTransfer::IsolateData<ICppObjectMapper>(Isolate)->BindCppObject(Isolate, ClassDefinition, Ptr, Self, PassByPointer);
     }
@@ -148,8 +155,6 @@ v8::Local<v8::FunctionTemplate> FCppObjectMapper::GetTemplateOfClass(v8::Isolate
     auto Iter = CDataNameToTemplateMap.find(ClassDefinition->TypeId);
     if (Iter == CDataNameToTemplateMap.end())
     {
-        v8::EscapableHandleScope HandleScope(Isolate);
-
         auto Template = v8::FunctionTemplate::New(
             Isolate, CDataNew, v8::External::New(Isolate, const_cast<void*>(reinterpret_cast<const void*>(ClassDefinition))));
         Template->InstanceTemplate()->SetInternalFieldCount(4);
@@ -214,7 +219,7 @@ v8::Local<v8::FunctionTemplate> FCppObjectMapper::GetTemplateOfClass(v8::Isolate
 
         CDataNameToTemplateMap[ClassDefinition->TypeId] = v8::UniquePersistent<v8::FunctionTemplate>(Isolate, Template);
 
-        return HandleScope.Escape(Template);
+        return Template;
     }
     else
     {
@@ -244,29 +249,27 @@ void FCppObjectMapper::BindCppObject(
     DataTransfer::SetPointer(Isolate, JSObject, Ptr, 0);
     DataTransfer::SetPointer(Isolate, JSObject, ClassDefinition->TypeId, 1);
 
-    if (!PassByPointer)
+    auto Iter = CDataCache.find(Ptr);
+    FObjectCacheNode* CacheNodePtr;
+    if (Iter != CDataCache.end())
+    {
+        CacheNodePtr = Iter->second.Add(ClassDefinition->TypeId);
+    }
+    else
     {
         auto Ret = CDataCache.insert({Ptr, FObjectCacheNode(ClassDefinition->TypeId)});
-        auto CacheNodePtr = &Ret.first->second;
-        CacheNodePtr->Value.Reset(Isolate, JSObject);
+        CacheNodePtr = &Ret.first->second;
+    }
+    CacheNodePtr->Value.Reset(Isolate, JSObject);
+
+    if (!PassByPointer)
+    {
         CDataFinalizeMap[Ptr] = ClassDefinition->Finalize;
         CacheNodePtr->Value.SetWeak<JSClassDefinition>(
             ClassDefinition, CDataGarbageCollectedWithFree, v8::WeakCallbackType::kInternalFields);
     }
     else
     {
-        auto Iter = CDataCache.find(Ptr);
-        FObjectCacheNode* CacheNodePtr;
-        if (Iter != CDataCache.end())
-        {
-            CacheNodePtr = Iter->second.Add(ClassDefinition->TypeId);
-        }
-        else
-        {
-            auto Ret = CDataCache.insert({Ptr, FObjectCacheNode(ClassDefinition->TypeId)});
-            CacheNodePtr = &Ret.first->second;
-        }
-        CacheNodePtr->Value.Reset(Isolate, JSObject);
         CacheNodePtr->Value.SetWeak<JSClassDefinition>(
             ClassDefinition, CDataGarbageCollectedWithoutFree, v8::WeakCallbackType::kInternalFields);
     }

@@ -40,7 +40,7 @@ void Inc(pesapi_callback_info info) {
 void Init1() {
     pesapi_property_descriptor properties = pesapi_alloc_property_descriptors(1);
     pesapi_set_method_info(properties, 0, "Inc", true, Inc, nullptr, nullptr);
-    pesapi_define_class("TestClass11", nullptr, "TestClass11", nullptr, nullptr, 1, properties);
+    pesapi_define_class("TestClass11", nullptr, "TestClass11", nullptr, nullptr, 1, properties, nullptr);
 }
 
 //cpp template

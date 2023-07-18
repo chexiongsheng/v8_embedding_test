@@ -16,6 +16,8 @@
 
 namespace puerts
 {
+namespace internal
+{
 constexpr std::size_t NumDigits(std::size_t n)
 {
     return n < 10 ? 1 : NumDigits(n / 10) + 1;
@@ -74,59 +76,16 @@ struct ParamsDecl<N>
     }
 };
 
+}    // namespace internal
+
 template <typename R, typename... Args>
 struct ScriptTypeName<std::function<R(Args...)>>
 {
     static constexpr auto value()
     {
-        return Literal("(") + ParamsDecl<0, Args...>::Get() + Literal(") => ") + ScriptTypeNameWithNamespace<R>::value();
+        return internal::Literal("(") + internal::ParamsDecl<0, Args...>::Get() + internal::Literal(") => ") +
+               ScriptTypeNameWithNamespace<R>::value();
     }
 };
 
-namespace converter
-{
-template <typename R, typename... Args>
-struct Converter<std::function<R(Args...)>>
-{
-    static ValueType toScript(ContextType context, std::function<R(Args...)> value)
-    {
-        return GetUndefined(context);
-    }
-
-    static std::function<R(Args...)> toCpp(ContextType context, const ValueType value)
-    {
-        if (IsNullOrUndefined(context, value))
-            return nullptr;
-        Function PF(context, value);
-        return [=](Args... cppArgs) -> R { return PF.Func<R>(cppArgs...); };
-    }
-
-    static bool accept(ContextType context, const ValueType value)
-    {
-        return IsNullOrUndefined(context, value) || Converter<Function>::accept(context, value);
-    }
-};
-
-template <typename... Args>
-struct Converter<std::function<void(Args...)>>
-{
-    static ValueType toScript(ContextType context, std::function<void(Args...)> value)
-    {
-        return GetUndefined(context);
-    }
-
-    static std::function<void(Args...)> toCpp(ContextType context, const ValueType value)
-    {
-        if (IsNullOrUndefined(context, value))
-            return nullptr;
-        Function PF(context, value);
-        return [=](Args... cppArgs) -> void { PF.Action(cppArgs...); };
-    }
-
-    static bool accept(ContextType context, const ValueType value)
-    {
-        return IsNullOrUndefined(context, value) || Converter<Function>::accept(context, value);
-    }
-};
-}    // namespace converter
 }    // namespace puerts

@@ -24,7 +24,7 @@ class AutoValueScope
 public:
     AutoValueScope(pesapi_env_holder env_holder)
     {
-        scope = pesapi_open_scope(pesapi_get_env_from_holder(env_holder));
+        scope = pesapi_open_scope(env_holder);
     }
 
     ~AutoValueScope()
@@ -35,7 +35,8 @@ public:
     pesapi_scope scope;
 };
 }    // namespace internal
-
+namespace pesapi_impl
+{
 class Object
 {
 public:
@@ -67,7 +68,7 @@ public:
         auto value = pesapi_get_property(env, object, key);
         if (!pesapi_is_undefined(env, value))
         {
-            return puerts::converter::Converter<T>::toCpp(env, value);
+            return puerts::pesapi_impl::Converter<T>::toCpp(env, value);
         }
         return {};
     }
@@ -79,7 +80,7 @@ public:
         auto env = pesapi_get_env_from_holder(env_holder);
         auto object = pesapi_get_value_from_holder(env, value_holder);
 
-        pesapi_set_property(env, object, key, puerts::converter::Converter<T>::toScript(env, val));
+        pesapi_set_property(env, object, key, puerts::pesapi_impl::Converter<T>::toScript(env, val));
     }
 
     bool IsValid() const
@@ -99,7 +100,7 @@ public:
     pesapi_env_holder env_holder;
     pesapi_value_holder value_holder;
 
-    friend struct puerts::converter::Converter<Object>;
+    friend struct puerts::pesapi_impl::Converter<Object>;
 };
 
 class Function : public Object
@@ -140,7 +141,7 @@ public:
         }
         else
         {
-            return converter::Converter<Ret>::toCpp(env, ret);
+            return pesapi_impl::Converter<Ret>::toCpp(env, ret);
         }
     }
 
@@ -156,7 +157,7 @@ private:
     template <typename... Args>
     auto invokeHelper(pesapi_env env, pesapi_value func, Args... CppArgs) const
     {
-        pesapi_value argv[sizeof...(Args)]{puerts::converter::Converter<Args>::toScript(env, CppArgs)...};
+        pesapi_value argv[sizeof...(Args)]{puerts::pesapi_impl::Converter<Args>::toScript(env, CppArgs)...};
         return pesapi_call_function(env, func, nullptr, sizeof...(Args), argv);
     }
 
@@ -165,40 +166,42 @@ private:
         return pesapi_call_function(env, func, nullptr, 0, nullptr);
     }
 
-    friend struct puerts::converter::Converter<Function>;
+    friend struct puerts::pesapi_impl::Converter<Function>;
 };
 
+}    // namespace pesapi_impl
+
 template <>
-struct ScriptTypeName<Object>
+struct ScriptTypeName<pesapi_impl::Object>
 {
     static constexpr auto value()
     {
-        return Literal("object");
+        return internal::Literal("object");
     }
 };
 
 template <>
-struct ScriptTypeName<::puerts::Function>
+struct ScriptTypeName<pesapi_impl::Function>
 {
     static constexpr auto value()
     {
-        return Literal("Function");
+        return internal::Literal("Function");
     }
 };
 
-namespace converter
+namespace pesapi_impl
 {
 template <>
-struct Converter<::puerts::Object>
+struct Converter<Object>
 {
-    static pesapi_value toScript(pesapi_env env, ::puerts::Object value)
+    static pesapi_value toScript(pesapi_env env, Object value)
     {
         return pesapi_get_value_from_holder(env, value.value_holder);
     }
 
-    static ::puerts::Object toCpp(pesapi_env env, pesapi_value value)
+    static Object toCpp(pesapi_env env, pesapi_value value)
     {
-        return ::puerts::Object(env, value);
+        return Object(env, value);
     }
 
     static bool accept(pesapi_env env, pesapi_value value)
@@ -208,16 +211,16 @@ struct Converter<::puerts::Object>
 };
 
 template <>
-struct Converter<::puerts::Function>
+struct Converter<Function>
 {
-    static pesapi_value toScript(pesapi_env env, ::puerts::Function value)
+    static pesapi_value toScript(pesapi_env env, Function value)
     {
         return pesapi_get_value_from_holder(env, value.value_holder);
     }
 
-    static ::puerts::Function toCpp(pesapi_env env, pesapi_value value)
+    static Function toCpp(pesapi_env env, pesapi_value value)
     {
-        return ::puerts::Function(env, value);
+        return Function(env, value);
     }
 
     static bool accept(pesapi_env env, pesapi_value value)
@@ -225,7 +228,9 @@ struct Converter<::puerts::Function>
         return pesapi_is_function(env, value);
     }
 };
-}    // namespace converter
+
+#include "StdFunctionConverter.hpp"
+}    // namespace pesapi_impl
 
 }    // namespace puerts
 

@@ -30,7 +30,7 @@
 #define __DefCDataPointerConverter(CLS)                                                                    \
     namespace puerts                                                                                       \
     {                                                                                                      \
-    namespace converter                                                                                    \
+    namespace pesapi_impl                                                                                  \
     {                                                                                                      \
     template <>                                                                                            \
     struct Converter<CLS*>                                                                                 \
@@ -53,106 +53,156 @@
 
 namespace puerts
 {
-typedef pesapi_callback_info CallbackInfoType;
-typedef pesapi_env ContextType;
-typedef pesapi_value ValueType;
-typedef void (*FunctionCallbackType)(pesapi_callback_info info);
-typedef void* (*InitializeFuncType)(pesapi_callback_info Info);
-struct GeneralFunctionInfo
+namespace pesapi_impl
 {
-    const char* Name;
-    FunctionCallbackType Callback;
-    void* Data = nullptr;
+template <typename T, typename Enable = void>
+struct Converter;
+
+template <typename T, typename = void>
+struct CustomArgumentBufferType
+{
+    static constexpr bool enable = false;
 };
 
-struct GeneralPropertyInfo
+struct API
 {
-    const char* Name;
-    FunctionCallbackType Getter;
-    FunctionCallbackType Setter;
-    void* Data = nullptr;
-};
-
-struct GeneralFunctionReflectionInfo
-{
-    const char* Name;
-    const CFunctionInfo* Type;
-};
-
-struct GeneralPropertyReflectionInfo
-{
-    const char* Name;
-    const CTypeInfo* Type;
-};
-
-inline int GetArgsLen(pesapi_callback_info info)
-{
-    return pesapi_get_args_len(info);
-}
-
-inline pesapi_value GetArg(pesapi_callback_info info, int index)
-{
-    return pesapi_get_arg(info, index);
-}
-
-inline pesapi_env GetContext(pesapi_callback_info info)
-{
-    return pesapi_get_env(info);
-}
-inline pesapi_value GetThis(pesapi_callback_info info)
-{
-    return pesapi_get_this(info);
-}
-
-inline pesapi_value GetHolder(pesapi_callback_info info)
-{
-    return pesapi_get_holder(info);
-}
-
-inline void ThrowException(pesapi_callback_info info, const char* msg)
-{
-    pesapi_throw_by_string(info, msg);
-}
-
-inline void SetReturn(pesapi_callback_info info, pesapi_value value)
-{
-    pesapi_add_return(info, value);
-}
-
-template <typename T1, typename T2>
-inline void LinkOuter(pesapi_env env, pesapi_value outer, pesapi_value inner)
-{
-    pesapi_set_property_uint32(env, inner, 0, outer);
-}
-
-inline void UpdateRefValue(pesapi_env env, pesapi_value holder, pesapi_value value)
-{
-    if (pesapi_is_object(env, holder))
+    typedef pesapi_callback_info CallbackInfoType;
+    typedef pesapi_env ContextType;
+    typedef pesapi_value ValueType;
+    typedef void (*FunctionCallbackType)(pesapi_callback_info info);
+    typedef void* (*InitializeFuncType)(pesapi_callback_info Info);
+    struct GeneralFunctionInfo
     {
-        pesapi_update_value_ref(env, holder, value);
+        const char* Name;
+        FunctionCallbackType Callback;
+        void* Data = nullptr;
+        const CFunctionInfo* ReflectionInfo = nullptr;
+    };
+
+    struct GeneralPropertyInfo
+    {
+        const char* Name;
+        FunctionCallbackType Getter;
+        FunctionCallbackType Setter;
+        void* Data = nullptr;
+    };
+
+    struct GeneralFunctionReflectionInfo
+    {
+        const char* Name;
+        const CFunctionInfo* Type;
+    };
+
+    struct GeneralPropertyReflectionInfo
+    {
+        const char* Name;
+        const CTypeInfo* Type;
+    };
+
+    inline static int GetArgsLen(pesapi_callback_info info)
+    {
+        return pesapi_get_args_len(info);
     }
-}
 
-template <typename T>
-inline T* FastGetNativeObjectPointer(pesapi_env env, pesapi_value value)
-{
-    return static_cast<T*>(pesapi_get_native_object_ptr(env, value));
-}
+    inline static pesapi_value GetArg(pesapi_callback_info info, int index)
+    {
+        return pesapi_get_arg(info, index);
+    }
 
-inline pesapi_value GetUndefined(pesapi_env env)
-{
-    return pesapi_create_undefined(env);
-}
+    inline static pesapi_env GetContext(pesapi_callback_info info)
+    {
+        return pesapi_get_env(info);
+    }
+    inline static pesapi_value GetThis(pesapi_callback_info info)
+    {
+        return pesapi_get_this(info);
+    }
 
-inline bool IsNullOrUndefined(pesapi_env env, pesapi_value val)
-{
-    return pesapi_is_null(env, val) || pesapi_is_undefined(env, val);
-}
+    inline static pesapi_value GetHolder(pesapi_callback_info info)
+    {
+        return pesapi_get_holder(info);
+    }
 
-}    // namespace puerts
+    inline static void ThrowException(pesapi_callback_info info, const char* msg)
+    {
+        pesapi_throw_by_string(info, msg);
+    }
 
-namespace puerts
-{
+    inline static void SetReturn(pesapi_callback_info info, pesapi_value value)
+    {
+        pesapi_add_return(info, value);
+    }
+
+    template <typename T1, typename T2>
+    inline static void LinkOuter(pesapi_env env, pesapi_value outer, pesapi_value inner)
+    {
+        pesapi_set_property_uint32(env, inner, 0, outer);
+    }
+
+    inline static void UpdateRefValue(pesapi_env env, pesapi_value holder, pesapi_value value)
+    {
+        if (pesapi_is_object(env, holder))
+        {
+            pesapi_update_value_ref(env, holder, value);
+        }
+    }
+
+    template <typename T>
+    inline static T* FastGetNativeObjectPointer(pesapi_env env, pesapi_value value)
+    {
+        return static_cast<T*>(pesapi_get_native_object_ptr(env, value));
+    }
+
+    inline static pesapi_value GetUndefined(pesapi_env env)
+    {
+        return pesapi_create_undefined(env);
+    }
+
+    inline static bool IsNullOrUndefined(pesapi_env env, pesapi_value val)
+    {
+        return pesapi_is_null(env, val) || pesapi_is_undefined(env, val);
+    }
+
+    typedef void (*FinalizeFuncType)(void* Ptr);
+
+    template <typename T, typename CDB>
+    static void Register(FinalizeFuncType Finalize, const CDB& Cdb)
+    {
+        size_t properties_count = Cdb.functions_.size() + Cdb.methods_.size() + Cdb.properties_.size() + Cdb.variables_.size();
+        auto properties = pesapi_alloc_property_descriptors(properties_count);
+        size_t pos = 0;
+        for (const auto& func : Cdb.functions_)
+        {
+            pesapi_set_method_info(properties, pos++, func.Name, true, func.Callback, nullptr, nullptr);
+        }
+
+        for (const auto& method : Cdb.methods_)
+        {
+            pesapi_set_method_info(properties, pos++, method.Name, false, method.Callback, nullptr, nullptr);
+        }
+
+        for (const auto& prop : Cdb.properties_)
+        {
+            pesapi_set_property_info(properties, pos++, prop.Name, false, prop.Getter, prop.Setter, nullptr, nullptr);
+        }
+
+        for (const auto& prop : Cdb.variables_)
+        {
+            pesapi_set_property_info(properties, pos++, prop.Name, true, prop.Getter, prop.Setter, nullptr, nullptr);
+        }
+
+        pesapi_finalize finalize = Finalize;
+        pesapi_define_class(StaticTypeId<T>::get(), Cdb.superTypeId_, Cdb.className_, Cdb.constructor_, finalize, properties_count,
+            properties, nullptr);
+    }
+
+    template <typename T>
+    using Converter = Converter<T>;
+
+    template <typename T>
+    using CustomArgumentBufferType = CustomArgumentBufferType<T>;
+};
+
 class StringHolder
 {
 public:
@@ -204,16 +254,11 @@ private:
 };
 
 template <>
-struct ArgumentBufferType<const char*>
+struct CustomArgumentBufferType<const char*>
 {
     using type = StringHolder;
-    static constexpr bool is_custom = true;
+    static constexpr bool enable = true;
 };
-
-namespace converter
-{
-template <typename T, typename Enable = void>
-struct Converter;
 
 template <typename T>
 struct Converter<T, typename std::enable_if<std::is_integral<T>::value && sizeof(T) == 8 && std::is_signed<T>::value>::type>
@@ -496,7 +541,7 @@ struct Converter<T, typename std::enable_if<std::is_copy_constructible<T>::value
 {
     static pesapi_value toScript(pesapi_env env, T value)
     {
-        return pesapi_create_native_object(env, puerts::DynamicTypeId<T>::get(&value), new T(value), false);
+        return pesapi_create_native_object(env, puerts::DynamicTypeId<T>::get(&value), new T(value), true);
     }
     static T toCpp(pesapi_env env, pesapi_value value)
     {
@@ -509,7 +554,7 @@ struct Converter<T, typename std::enable_if<std::is_copy_constructible<T>::value
     }
 };
 
-}    // namespace converter
+}    // namespace pesapi_impl
 
 template <>
 struct is_script_type<std::string> : std::true_type
@@ -521,7 +566,7 @@ struct ScriptTypeName<T[Size], typename std::enable_if<is_script_type<T>::value 
 {
     static constexpr auto value()
     {
-        return Literal("ArrayBuffer");
+        return internal::Literal("ArrayBuffer");
     }
 };
 
@@ -530,7 +575,7 @@ struct ScriptTypeName<void*>
 {
     static constexpr auto value()
     {
-        return Literal("ArrayBuffer");
+        return internal::Literal("ArrayBuffer");
     }
 };
 
@@ -539,7 +584,7 @@ struct ScriptTypeName<const void*>
 {
     static constexpr auto value()
     {
-        return Literal("ArrayBuffer");
+        return internal::Literal("ArrayBuffer");
     }
 };
 

@@ -8,12 +8,9 @@
 
 #pragma once
 
-#if defined(BUILDING_PES_EXTENSION)
-
 #include "Binding.hpp"
-
+#include "pesapi.h"
 #include <iostream>
-#define REPORT_EXCEPTION(MSG) std::cout << "call function throw: " << MSG << std::endl
 
 namespace puerts
 {
@@ -37,6 +34,11 @@ public:
 }    // namespace internal
 namespace pesapi_impl
 {
+static void REPORT_EXCEPTION(const char* MSG)
+{
+    std::cout << "call function throw: " << MSG << std::endl;
+}
+
 class Object
 {
 public:
@@ -233,5 +235,3 @@ struct Converter<Function>
 }    // namespace pesapi_impl
 
 }    // namespace puerts
-
-#endif

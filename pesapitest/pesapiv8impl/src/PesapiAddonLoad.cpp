@@ -75,6 +75,7 @@ static int LoadAddon(const char* path, const char* module_name)
 
     if (hinstLib != NULL) 
     {
+        /*
         std::string EntryName = STRINGIFY(PESAPI_MODULE_INITIALIZER(___magic_module_name_xx___));
         EntryName = std::regex_replace(EntryName, std::regex("___magic_module_name_xx___"), module_name);
         
@@ -83,6 +84,18 @@ static int LoadAddon(const char* path, const char* module_name)
         if (Init) 
         {
             Init(funcs);
+            GHandlers[path] = hinstLib;
+            return 0;
+        }
+        */
+        std::string EntryName = STRINGIFY(PESAPI_MODULE_INITIALIZER(dynamic));
+        
+        auto Init = (const char* (*)(pesapi_func_ptr*))(uintptr_t)GetProcAddress(hinstLib, EntryName.c_str()); 
+ 
+        if (Init) 
+        {
+            const char* mn = Init(funcs);
+            std::cout << "load " << mn << " success!" << std::endl;
             GHandlers[path] = hinstLib;
             return 0;
         }

@@ -11,8 +11,11 @@ project(Helloworld)
 
 set (CMAKE_CXX_STANDARD 14)
 
+if ( NOT DEFINED JS_ENGINE )
+    set(JS_ENGINE v8)
+endif()
 
-set(JS_ENGINE_ROOT ${CMAKE_SOURCE_DIR}/../v8)
+set(JS_ENGINE_ROOT ${CMAKE_SOURCE_DIR}/../${JS_ENGINE})
 
 include_directories(
     ${JS_ENGINE_ROOT}/Inc
@@ -22,7 +25,11 @@ set ( SRC hello-world.cc)
 
 add_executable(helloworld ${SRC})
 
-set (LIB_NAME wee8)
+if ( JS_ENGINE STREQUAL "v8")
+    set (LIB_NAME wee8)
+elseif ( JS_ENGINE STREQUAL "quickjs")
+    set (LIB_NAME quickjs)
+endif ()
 
 if ( ANDROID )
     find_library(log-lib log )

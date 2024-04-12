@@ -13,26 +13,6 @@
 #include "libplatform/libplatform.h"
 #include "v8.h"
 
-#if defined(PLATFORM_WINDOWS)
-
-#if _WIN64
-#include "Blob/Win64/SnapshotBlob.h"
-#else
-#include "Blob/Win32/SnapshotBlob.h"
-#endif
-
-#elif defined(PLATFORM_ANDROID_ARM)
-#include "Blob/Android/armv7a/SnapshotBlob.h"
-#elif defined(PLATFORM_ANDROID_ARM64)
-#include "Blob/Android/arm64/SnapshotBlob.h"
-#elif defined(PLATFORM_MAC)
-#include "Blob/macOS/SnapshotBlob.h"
-#elif defined(PLATFORM_IOS)
-#include "Blob/iOS/arm64/SnapshotBlob.h"
-#elif defined(PLATFORM_LINUX)
-#include "Blob/Linux/SnapshotBlob.h"
-#endif
-
 static void Print(const v8::FunctionCallbackInfo<v8::Value>& info) {
     v8::Isolate* isolate = info.GetIsolate();
     v8::Local<v8::Context> context = isolate->GetCurrentContext();
@@ -43,11 +23,6 @@ static void Print(const v8::FunctionCallbackInfo<v8::Value>& info) {
 
 int main(int argc, char* argv[]) {
     // Initialize V8.
-    v8::StartupData SnapshotBlob;
-    SnapshotBlob.data = (const char *)SnapshotBlobCode;
-    SnapshotBlob.raw_size = sizeof(SnapshotBlobCode);
-    v8::V8::SetSnapshotDataBlob(&SnapshotBlob);
-
     std::unique_ptr<v8::Platform> platform = v8::platform::NewDefaultPlatform();
     v8::V8::InitializePlatform(platform.get());
     v8::V8::Initialize();

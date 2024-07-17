@@ -115,10 +115,6 @@ int main(int argc, char* argv[]) {
             external_refs.push_back(reinterpret_cast<intptr_t>(Print1));
             //看v8的处理，external_refs以nullptr作为结尾
             
-            v8::StartupData SnapshotBlob;
-            SnapshotBlob.data = (const char *)SnapshotBlobCode;
-            SnapshotBlob.raw_size = sizeof(SnapshotBlobCode);
-            
             v8::SnapshotCreator snapshot_creator(isolate, external_refs.data(), &SnapshotBlob);
             std::cout << "external_refs.data()=" << external_refs.data() << std::endl;
             std::vector<int> s;

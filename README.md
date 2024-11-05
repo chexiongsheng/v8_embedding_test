@@ -8,7 +8,7 @@
 
 ## v8下载
 
-下载puerts编译好的配套[v8库](https://github.com/puerts/backend-v8/releases/tag/V8_8.4.371.19_0323)
+下载puerts编译好的配套[v8库](https://github.com/puerts/backend-v8/releases/download/V8_9.4.146.24__241009/v8_bin_9.4.146.24.tgz)
 
 解压到v8_embedding_test目录
 
